@@ -1,0 +1,35 @@
+{% extends 'layout.html' %}
+{% block body %}
+<br>
+<h1>Purchases</h1>
+<hr>
+{% if purchases %}
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Member ID</th>
+            <th>Book ID</th>
+            <th>Purchase Date</th>
+            <th>Amount Paid</th>
+            <th>Expires At</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for purchase in purchases %}
+        <tr>
+            <td>{{purchase.id}}</td>
+            <td>
+                <a href="member/{{purchase.member_name}}"
+                    class="btn btn-dark pull-right">{{"{:03d}".format(purchase.member_name)}}</a>
+            </td>
+            <td>{{purchase.book_title}}</td>
+            <td>{{purchase.purchase_date}}</td>
+            <td>{{purchase.total_cost}}</td>
+            <td>{{purchase.expires_at}}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+{% endblock %}

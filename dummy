@@ -1,10 +1,14 @@
+Transactions:
 {% extends 'layout.html' %}
 {% block body %}
 <br>
 <h1>Transactions</h1>
 <a class="btn btn-success" href="/issue_book">Issue Book</a>
-<hr>
 {% if transactions %}
+    <a class="btn btn-Primary pull-right" href="/send_alerts">Send Email Alerts</a>
+{% endif %}
+<hr>
+{% if transactions%}
 <table class="table table-striped">
     <thead>
         <tr>
@@ -18,7 +22,6 @@
             <th>Amount Paid</th>
             <th>Return</th>
             <th>Delete a Transaction</th>
-            <th>Email Alert</th>
         </tr>
     </thead>
     <tbody>
@@ -33,8 +36,9 @@
                 <a href="member/{{transaction.member_id}}"
                     class="btn btn-dark pull-right">{{"{:03d}".format(transaction.member_id)}}</a>
             </td>
+
             <td>{{transaction.per_day_fee}}</td>
-            <td class="borrowed-date" data-borrowed="{{transaction.borrowed_on}}">{{transaction.borrowed_on}}</td>
+            <td>{{transaction.borrowed_on}}</td>
             <td>{{transaction.returned_on}}</td>
             <td>{{transaction.total_charge}}</td>
             <td>{{transaction.amount_paid}}</td>
@@ -50,53 +54,42 @@
             <td><a href="return_book/{{transaction.id}}" class="btn btn-Primary pull-right">Delete</a></td>
             {% endif %}
 
-            <!-- Email Alert Button -->
-            <!-- <td>
-                <a class="btn btn-Primary pull-right email-alert-btn"
-                    href="send_email/{{transaction.id}}"
-                    data-borrowed-date="{{transaction.borrowed_on}}"
-                    disabled>Email Alert</a>
-            </td> -->
-            <td>
-                <a class="btn btn-Primary pull-right email-alert-btn"
-                    href="send_email/{{transaction.id}}"
-                    data-borrowed-date="{{transaction.borrowed_on}}"
-                    style="pointer-events: none; opacity: 0.5;">Email Alert</a>
-            </td>
-            
+            <td><a class="btn btn-Primary pull-right" href="send_email/{{transaction.id}}">Email Alert</a></td>
 
+
+            <!-- {% if transaction.amount_paid=='-' %}
+            <td><a href="return_book/{{transaction.id}}" class="btn btn-danger pull-right">Return</a></td>
+            {% else %}
+            <td>CLOSED</td>
+            {% endif %} -->
         </tr>
         {% endfor %}
     </tbody>
 </table>
 {% endif %}
+{% endblock %}
 
-<script>
-    function checkDueDate() {
-        const emailButtons = document.querySelectorAll(".email-alert-btn");
-
-        emailButtons.forEach((button) => {
-            const borrowedDateStr = button.getAttribute("data-borrowed-date");
-
-            if (!borrowedDateStr) return;
-
-            const borrowedDate = new Date(borrowedDateStr);
-            const today = new Date();
-
-            // Calculate difference in days
-            const diffTime = today - borrowedDate;
-            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-
-            // Enable button if difference is greater than 10
-            if (diffDays > 10) {
-                button.style.pointerEvents = "auto";
-                button.style.opacity = "1";
-            }
-        });
-    }
-
-    document.addEventListener("DOMContentLoaded", checkDueDate);
-</script>
-
-
+Digital Books:
+{% extends 'layout.html' %}
+{% block body %}
+<br><br>
+<a href="/add_digital_book" class="btn btn-primary">Add a New Digital Book Here</a><br><br>
+<table class="table table-hover table-striped">
+    <thead>
+        <tr>
+            <th>Book Name</th>
+            <th>Author</th>
+            <th>Link to the book</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for book in books %}
+            <tr>
+                <td>{{book.name}}</td>
+                <td>{{book.author}}</td>
+                <td><a href="{{book.url}}" class="btn btn-primary">Click Here</a></td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
 {% endblock %}

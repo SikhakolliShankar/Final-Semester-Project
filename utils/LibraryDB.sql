@@ -43,8 +43,25 @@ CREATE TABLE `librarydb`.`transactions` (
 
 
 CREATE TABLE `librarydb`.`digitalbooks` (
-    `id` INT(11) PRIMARY KEY,
-    `name` VARCHAR(100) NOT NULL,
+    `id` INT(11) NOT NULL AUTO_INCREMENT,
+    `title` VARCHAR(255) NOT NULL,
     `author` VARCHAR(100) NOT NULL,
-    `url` VARCHAR(100) NOT NULL
-);
+    `publisher` VARCHAR(255) NOT NULL,
+    `cost` FLOAT NOT NULL,
+    `access_link` VARCHAR(255) NOT NULL,
+    PRIMARY KEY (`id`)
+) ENGINE = InnoDB;
+
+CREATE TABLE `librarydb`.`purchases` (
+    `id` INT(11) NOT NULL AUTO_INCREMENT,
+    `member_id` INT(11) NOT NULL,
+    `digitalbook_id` INT(11) NOT NULL,
+    `purchase_date` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `total_cost` FLOAT NOT NULL,
+    PRIMARY KEY (`id`),
+    FOREIGN KEY (`member_id`) REFERENCES members(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`digitalbook_id`) REFERENCES digitalbooks(`id`) ON DELETE CASCADE
+) ENGINE = InnoDB;
+
+ALTER TABLE purchases ADD COLUMN access_token VARCHAR(255) NOT NULL;
+ALTER TABLE purchases ADD COLUMN expires_at DATETIME NOT NULL;

@@ -642,7 +642,7 @@ def send_alerts():
     msg['To'] = 'sikhakollishankar16@gmail.com'
     msg['Subject'] = "Library Due Date Reminder"
     
-    # print(name,email)
+    print(name,email)
     body = f"""
     Dear '{user_data['name']}',
     
