@@ -25,7 +25,7 @@ app = Flask(__name__)
 app.config['MYSQL_HOST'] = 'localhost'
 app.config['MYSQL_COLLECTION'] = "Shankar"
 app.config['MYSQL_USER'] = 'root'
-app.config['MYSQL_PASSWORD'] = '123456789'
+app.config['MYSQL_PASSWORD'] = ''
 app.config['MYSQL_PORT'] = 3306
 app.config['MYSQL_DB'] = 'librarydb'
 app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
@@ -614,7 +614,7 @@ def send_alerts():
     SMTP_SERVER = "smtp.gmail.com"
     SMTP_PORT = 587
     SENDER_EMAIL = "sikhakollishankar0503@gmail.com"
-    SENDER_PASSWORD = "cicj huni rsfi ouaw"
+    SENDER_PASSWORD = ""
 
     connection = get_db_connection()
     cur = connection.cursor()
@@ -670,7 +670,7 @@ def send_email(transaction_id):
     SMTP_SERVER = "smtp.gmail.com"
     SMTP_PORT = 587
     SENDER_EMAIL = "sikhakollishankar0503@gmail.com"
-    SENDER_PASSWORD = "cicj huni rsfi ouaw"
+    SENDER_PASSWORD = ""
 
     connection = get_db_connection()
     cur = connection.cursor()
@@ -1081,7 +1081,7 @@ def send_email(member_email, book_title, access_token):
     
     with smtplib.SMTP("smtp.gmail.com", 587) as server:
         server.starttls()
-        server.login("sikhakollishankar0503@gmail.com", "cicj huni rsfi ouaw")
+        server.login("sikhakollishankar0503@gmail.com", "")
         server.sendmail("sikhakollishankar0503@gmail.com", "sikhakollishanka16@gmail.com", msg.as_string())
 
 # Route to Issue Digital Book
