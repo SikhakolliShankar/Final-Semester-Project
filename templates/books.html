@@ -1,45 +1,203 @@
 {% extends 'layout.html' %}
 {% block body %}
-<br>
-<h1>Books</h1>
-<a class="btn btn-success" href="/add_book">Add New Book</a>
-<a class="btn btn-secondary" href="/import_books">Import From API</a>
-<hr>
-{% if books %}
-<table class="table table-hover table-striped">
-    <thead>
-        <tr>
-            <th>Book ID</th>
-            <th>Title</th>
-            <th>Author(s)</th>
-            <th>Total No. of Books</th>
-            <th>Books Available to Rent</th>
-            <th>Rented Count</th>
-            <th></th>
-            <th></th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for book in books %}
-        <tr style="cursor:pointer;">
-            <td><a href="/book/{{book.id}}" class="btn btn-dark pull-right">{{book.id}}</a></td>
-            <td onclick="window.location='/book/{{book.id}}';">{{book.title}}</td>
-            <td onclick="window.location='/book/{{book.id}}';">{{book.author}}</td>
-            <td onclick="window.location='/book/{{book.id}}';">{{book.total_quantity}}</td>
-            <td onclick="window.location='/book/{{book.id}}';">{{book.available_quantity}}</td>
-            <td onclick="window.location='/book/{{book.id}}';">{{book.rented_count}}</td>
-            <td><a href="edit_book/{{book.id}}" class="btn btn-primary pull-right">Edit</a></td>
-            <td>
-                <form action="{{url_for('delete_book', id=book.id)}}" method="POST"
-                    onsubmit="return confirm('Are you sure you want to delete this book?');">
-                    <input type="hidden" name="method" value="Delete">
-                    <input type="submit" value="Delete" class="btn btn-danger">
-                </form>
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-{% endif %}
+<div class="container py-4">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="mb-0"><i class="bi bi-book me-2"></i>Books</h1>
+            <p class="text-muted">Manage your library collection</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a class="btn btn-success d-flex align-items-center" href="/add_book">
+                <i class="bi bi-plus-circle me-2"></i>Add New Book
+            </a>
+            <a class="btn btn-secondary d-flex align-items-center" href="/import_books">
+                <i class="bi bi-cloud-download me-2"></i>Import From API
+            </a>
+        </div>
+    </div>
+
+    <!-- Search and Filter Bar -->
+    <div class="card mb-4 border-0 shadow-sm">
+        <div class="card-body">
+            <div class="row g-2">
+                <div class="col-md-6">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                        <input type="text" class="form-control border-start-0" id="searchInput" placeholder="Search by title, author, or ID...">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <select class="form-select" id="filterSelect">
+                        <option selected>All Books</option>
+                        <option>Available Books</option>
+                        <option>Currently Rented</option>
+                        <option>Low Stock</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-outline-primary w-100">Apply Filters</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Books Table -->
+    {% if books %}
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-3">Book ID</th>
+                            <th>Title</th>
+                            <th>Author(s)</th>
+                            <th class="text-center">Total</th>
+                            <th class="text-center">Available</th>
+                            <th class="text-center">Rented</th>
+                            <th class="text-end pe-3">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for book in books %}
+                        <tr class="book-row" data-book-id="{{book.id}}">
+                            <td class="ps-3"><span class="badge bg-dark">{{book.id}}</span></td>
+                            <td class="fw-medium">{{book.title}}</td>
+                            <td>{{book.author}}</td>
+                            <td class="text-center">{{book.total_quantity}}</td>
+                            <td class="text-center">
+                                <span class="badge bg-{% if book.available_quantity > 0 %}success{% else %}danger{% endif %} rounded-pill">
+                                    {{book.available_quantity}}
+                                </span>
+                            </td>
+                            <td class="text-center">{{book.rented_count}}</td>
+                            <td class="text-end pe-3">
+                                <div class="btn-group">
+                                    <a href="/book/{{book.id}}" class="btn btn-sm btn-outline-secondary" title="View details">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a href="/edit_book/{{book.id}}" class="btn btn-sm btn-outline-primary" title="Edit book">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-outline-danger delete-btn" 
+                                            data-book-id="{{book.id}}" data-book-title="{{book.title}}" title="Delete book">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    {% else %}
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-5 text-center">
+            <img src="{{url_for('static', filename='empty.svg')}}" alt="No books" class="mb-3" style="max-width: 200px;">
+            <h3>No books found</h3>
+            <p class="text-muted">Your library collection is empty. Add some books to get started.</p>
+            <a href="/add_book" class="btn btn-primary">Add Your First Book</a>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirm Deletion</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete "<span id="bookTitle"></span>"?</p>
+                    <p class="text-danger">This action cannot be undone.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <form id="deleteForm" method="POST">
+                        <input type="hidden" name="method" value="Delete">
+                        <button type="submit" class="btn btn-danger">Delete Book</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap Icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+
+<style>
+    .book-row {
+        cursor: pointer;
+        transition: background-color 0.15s ease-in-out;
+    }
+    
+    .book-row:hover {
+        background-color: rgba(13, 110, 253, 0.05);
+    }
+    
+    .btn-group .btn {
+        transition: all 0.2s;
+    }
+    
+    .card {
+        border-radius: 0.5rem;
+        overflow: hidden;
+    }
+    
+    .badge {
+        font-weight: 500;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Make rows clickable
+        document.querySelectorAll('.book-row').forEach(row => {
+            row.addEventListener('click', function(e) {
+                // Don't navigate if clicked on action buttons
+                if (!e.target.closest('.btn-group')) {
+                    window.location = '/book/' + this.dataset.bookId;
+                }
+            });
+        });
+        
+        // Setup delete confirmation modal
+        const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+        document.querySelectorAll('.delete-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation(); // Prevent row click
+                const bookId = this.dataset.bookId;
+                const bookTitle = this.dataset.bookTitle;
+                
+                document.getElementById('bookTitle').textContent = bookTitle;
+                document.getElementById('deleteForm').action = "{{url_for('delete_book', id=0)}}".replace('0', bookId);
+                
+                deleteModal.show();
+            });
+        });
+        
+        // Filter functionality
+        document.getElementById('searchInput').addEventListener('keyup', function() {
+            const searchTerm = this.value.toLowerCase();
+            document.querySelectorAll('.book-row').forEach(row => {
+                const title = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+                const author = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
+                const id = row.querySelector('td:nth-child(1)').textContent.toLowerCase();
+                
+                if (title.includes(searchTerm) || author.includes(searchTerm) || id.includes(searchTerm)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+    });
+</script>
 {% endblock %}

@@ -44,15 +44,74 @@ def get_db_connection():
     )
     return connection
 
+###########################################################################
+
+from flask import Flask, render_template, flash, redirect, url_for, request, session
+from functools import wraps
+
+# Admin credentials (you can store these securely in environment variables or a database)
+ADMIN_USERNAME = "admin"
+ADMIN_PASSWORD = "password123"
+
+# Login Route
+@app.route('/', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+
+        if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
+            session['admin_logged_in'] = True
+            flash("Login successful!", "success")
+            return redirect(url_for('index'))
+        else:
+            flash("Invalid username or password", "danger")
+            return redirect(url_for('login'))
+
+    return render_template('login.html')
+
+# Logout Route
+@app.route('/logout')
+def logout():
+    session.pop('admin_logged_in', None)
+    flash("You have been logged out", "success")
+    return redirect(url_for('login'))
+
+# Authentication Decorator
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get('admin_logged_in'):
+            flash("You need to log in as admin to access this page", "danger")
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+# Protect Routes
+@app.route('/admin_dashboard')
+@admin_required
+def admin_dashboard():
+    return render_template('admin_dashboard.html')
+
+# Add this to the top of the file to import session and wraps
+from flask import session
+from functools import wraps
+
+
+
+###########################################################################
+
+
 
 # Homepage
-@app.route('/')
+@app.route('/home')
 def index():
     return render_template('home.html')
 
 
 # Members
 @app.route('/members')
+@admin_required
 def members():
     # Create MySQLCursor
     connection = get_db_connection()
@@ -222,6 +281,7 @@ def delete_member(id):
 
 # Books
 @app.route('/books')
+@admin_required
 def books():
     # Create MySQLCursor
     # cur = mysql.connection.cursor()
@@ -272,15 +332,15 @@ class AddBook(Form):
     title = StringField('Title', [validators.Length(min=2, max=255)])
     author = StringField('Author(s)', [validators.Length(min=2, max=255)])
     average_rating = FloatField(
-        'Average Rating', [validators.NumberRange(min=0, max=5)])
+        'Average Rating', [validators.Optional(), validators.NumberRange(min=0, max=5)])
     isbn = StringField('ISBN', [validators.Length(min=10, max=10)])
     isbn13 = StringField('ISBN13', [validators.Length(min=13, max=13)])
-    language_code = StringField('Language', [validators.Length(min=1, max=3)])
-    num_pages = IntegerField('No. of Pages', [validators.NumberRange(min=1)])
+    language_code = StringField('Language', [validators.Optional(), validators.Length(min=1, max=30)])
+    num_pages = IntegerField('No. of Pages', [validators.Optional(), validators.NumberRange(min=1)])
     ratings_count = IntegerField(
-        'No. of Ratings', [validators.NumberRange(min=0)])
+        'No. of Ratings', [validators.Optional(), validators.NumberRange(min=0)])
     text_reviews_count = IntegerField(
-        'No. of Text Reviews', [validators.NumberRange(min=0)])
+        'No. of Text Reviews', [validators.Optional(), validators.NumberRange(min=0)])
     publication_date = DateField(
         'Publication Date', [validators.InputRequired()])
     publisher = StringField('Publisher', [validators.Length(min=2, max=255)])
@@ -403,7 +463,7 @@ def import_books():
                 book_found = cur.fetchone()
                 if(not book_found):
                     # Execute SQL Query
-                    cur.execute("INSERT INTO books (id,title,author,average_rating,isbn,isbn13,language_code,num_pages,ratings_count,text_reviews_count,publication_date,publisher,total_quantity,available_quantity) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", [
+                    cur.execute("INSERT INTO books (id,title,author,average_rating,isbn,isbn13,language_code,num_pages,ratings_count,text_reviews_count,publication_date,publisher,total_quantity,available_quantity,rented_count) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,0)", [
                         book['bookID'],
                         book['title'],
                         book['authors'],
@@ -414,7 +474,7 @@ def import_books():
                         book['  num_pages'],
                         book['ratings_count'],
                         book['text_reviews_count'],
-                        book['publication_date'],
+                        datetime.strptime(book['publication_date'], "%m/%d/%Y").strftime("%Y-%m-%d"),
                         book['publisher'],
                         form.quantity_per_book.data,
                         # When a book is first added, available_quantity = total_quantity
@@ -594,14 +654,12 @@ def update_transactions():
     # Get all active transactions
     cur.execute("SELECT id, borrowed_on, per_day_fee FROM transactions WHERE returned_on IS NULL")
     transactions = cur.fetchall()
-
     # Update the total_charge of each transaction
     for transaction in transactions:
         borrowed_date = transaction["borrowed_on"]
         today_date = datetime.now()
         difference = (today_date - borrowed_date).days + 1
         total_charge = difference * transaction['per_day_fee']
-
         # Update the total_charge in the database
         cur.execute("UPDATE transactions SET total_charge = %s WHERE id = %s", (total_charge, transaction["id"]))
     
@@ -609,6 +667,7 @@ def update_transactions():
     connection.commit()
     cur.close()
 
+'''
 @app.route('/send_alerts')
 def send_alerts():
     SMTP_SERVER = "smtp.gmail.com"
@@ -641,8 +700,8 @@ def send_alerts():
     msg['From'] = SENDER_EMAIL
     msg['To'] = 'sikhakollishankar16@gmail.com'
     msg['Subject'] = "Library Due Date Reminder"
-    
-    print(name,email)
+    email = 'sikhakollishankar0503@gmail.com'
+    # print(name,email)
     body = f"""
     Dear '{user_data['name']}',
     
@@ -662,64 +721,152 @@ def send_alerts():
         return jsonify({"message": f"Email sent to {email}"}), 200
     except Exception as e:
         return jsonify({"error": f"Failed to send email: {e}"}), 500
-
+'''
 
 @app.route('/send_email/<string:transaction_id>', methods=['GET'])
 def send_email(transaction_id):
-    print(transaction_id)
-    SMTP_SERVER = "smtp.gmail.com"
-    SMTP_PORT = 587
-    SENDER_EMAIL = "sikhakollishankar0503@gmail.com"
-    SENDER_PASSWORD = "cicj huni rsfi ouaw"
-
-    connection = get_db_connection()
-    cur = connection.cursor()
-
-    cur.execute("SELECT members.email, members.name, books.title, transactions.borrowed_on FROM transactions JOIN members ON transactions.member_id = members.id JOIN books ON transactions.book_id = books.id WHERE transactions.id = %s AND transactions.returned_on IS NULL", [transaction_id])
-
-    user_data = cur.fetchone()
-    
-    if not user_data:
-        connection.close()
-        return jsonify({"message": "No active transaction found for given transaction ID."}), 404
-    
-    borrowed_on_date = user_data['borrowed_on']
-    
-    if (datetime.now() - borrowed_on_date).days <= 10:
-        connection.close()
-        return jsonify({"message": "Email alert not needed as borrowed duration is within limit."}), 200
-    
-    connection.close()
-
-    print((datetime.now() - borrowed_on_date).days)
-    
-    msg = MIMEMultipart()
-    msg['From'] = SENDER_EMAIL
-    msg['To'] = 'sikhakollishankar16@gmail.com'
-    msg['Subject'] = "Library Due Date Reminder"
-    
-    email = 'sikhakollishankar16@gmail.com'
-
-    body = f"""
-    Dear '{user_data['name']}',
-    
-    This is a reminder that you have borrowed the book book for more than 10 days. Please return it at the earliest to avoid penalties.
-    
-    Regards,
-    Library Management
-    """
-    msg.attach(MIMEText(body, 'plain'))
-    
+    """Send reminder email for overdue books to library members."""
     try:
-        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
-        server.starttls()
-        server.login(SENDER_EMAIL, SENDER_PASSWORD)
-        server.send_message(msg)
-        server.quit()
-        return jsonify({"message": f"Email sent to {email}"}), 200
+        # Load email configuration from environment variables for security
+        SMTP_SERVER = "smtp.gmail.com"
+        SMTP_PORT = 587
+        SENDER_EMAIL = "sikhakollishankar0503@gmail.com"
+        SENDER_PASSWORD = "cicj huni rsfi ouaw"
+        
+        # Validate transaction_id to prevent SQL injection
+        if not transaction_id.isdigit():
+            return jsonify({"error": "Invalid transaction ID format"}), 400
+            
+        # Get transaction data from database
+        connection = get_db_connection()
+        cursor = connection.cursor()  # Use dictionary cursor for MySQL
+        
+        try:
+            # Query to get transaction details with book and member information
+            cursor.execute("""
+                SELECT 
+                    m.email, 
+                    m.name, 
+                    b.title, 
+                    t.borrowed_on,
+                    t.per_day_fee,
+                    DATEDIFF(CURRENT_TIMESTAMP, t.borrowed_on) as days_borrowed
+                FROM transactions t
+                JOIN members m ON t.member_id = m.id 
+                JOIN books b ON t.book_id = b.id 
+                WHERE t.id = %s AND t.returned_on IS NULL
+            """, (transaction_id,))
+            
+            user_data = cursor.fetchone()
+            
+            if not user_data:
+                return jsonify({"message": "No active transaction found for given transaction ID."}), 404
+            
+            # Calculate days borrowed and due date (10 days after borrow date)
+            days_borrowed = user_data['days_borrowed']
+            borrowed_on_date = user_data['borrowed_on']
+            due_date = borrowed_on_date + timedelta(days=10)
+            days_overdue = max(0, days_borrowed)
+            
+            # Calculate current charges
+            current_charge = days_overdue * user_data['per_day_fee']
+            
+            # Don't send email if not overdue
+            if days_borrowed <= 10:
+                return jsonify({
+                    "message": "Email alert not needed as borrowed duration is within limit.",
+                    "days_borrowed": days_borrowed
+                }), 200
+                
+            # Log transaction details
+            app.logger.info(f"Sending overdue notice for transaction {transaction_id}. Days borrowed: {days_borrowed}")
+            
+            # Create email
+            msg = MIMEMultipart()
+            msg['From'] = SENDER_EMAIL
+            recipient_email = user_data['email']
+            msg['To'] = recipient_email
+            msg['Subject'] = f"OVERDUE: Library Book '{user_data['title']}' Reminder"
+            
+            # Add HTML alternative for better formatting
+            html_body = f"""
+            <html>
+            <body style="font-family: Arial, sans-serif; line-height: 1.6;">
+                <p>Dear <b>{user_data['name']}</b>,</p>
+                
+                <p>This is a reminder that you borrowed the book "<b>{user_data['title']}</b>" on 
+                {borrowed_on_date.strftime('%B %d, %Y')} and it is now <span style="color:red;"><b>{days_overdue} days overdue</b></span>.</p>
+                
+                <p><b>Current charges: ${current_charge:.2f}</b> (${user_data['per_day_fee']:.2f} per day × {days_overdue} days)</p>
+                
+                <p>Please return it at your earliest convenience to avoid additional late fees.</p>
+                
+                <h3>Book details:</h3>
+                <ul>
+                    <li><b>Title:</b> {user_data['title']}</li>
+                    <li><b>Borrowed on:</b> {borrowed_on_date.strftime('%B %d, %Y')}</li>
+                    <li><b>Due date:</b> {due_date.strftime('%B %d, %Y')}</li>
+                    <li><b>Days overdue:</b> {days_overdue}</li>
+                </ul>
+                
+                <p>If you've already returned this book, please disregard this message.</p>
+                
+                <p>Regards,<br>
+                Library Management Team</p>
+            </body>
+            </html>
+            """
+            msg.attach(MIMEText(html_body, 'html'))
+            
+            # Send email with proper error handling
+            with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+                server.starttls()
+                server.login(SENDER_EMAIL, SENDER_PASSWORD)
+                server.send_message(msg)
+            
+            # Check if email_notifications table exists, create if it doesn't
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS `email_notifications` (
+                    `id` INT(11) NOT NULL AUTO_INCREMENT,
+                    `transaction_id` INT(11) NOT NULL,
+                    `sent_on` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `days_overdue` INT(11) NOT NULL,
+                    PRIMARY KEY (`id`),
+                    FOREIGN KEY (`transaction_id`) REFERENCES transactions(`id`) ON DELETE CASCADE
+                ) ENGINE = InnoDB;
+            """)
+            connection.commit()
+                
+            # Record email notification in database
+            cursor.execute(
+                "INSERT INTO email_notifications (transaction_id, sent_on, days_overdue) VALUES (%s, %s, %s)",
+                (transaction_id, datetime.now(), days_overdue)
+            )
+            connection.commit()
+                
+            return jsonify({
+                "success": True, 
+                "message": f"Reminder email sent to {recipient_email}",
+                "days_overdue": days_overdue,
+                "current_charge": current_charge
+            }), 200
+            
+        except Exception as db_error:
+            connection.rollback()
+            app.logger.error(f"Database error: {str(db_error)}")
+            return jsonify({"error": f"Database error: {str(db_error)}"}), 500
+        finally:
+            if cursor:
+                cursor.close()
+            if connection:
+                connection.close()
+                
+    except smtplib.SMTPException as smtp_error:
+        app.logger.error(f"SMTP error: {str(smtp_error)}")
+        return jsonify({"error": f"Failed to send email: {str(smtp_error)}"}), 500
     except Exception as e:
-        return jsonify({"error": f"Failed to send email: {e}"}), 500
-
+        app.logger.error(f"Unexpected error: {str(e)}")
+        return jsonify({"error": f"An unexpected error occurred: {str(e)}"}), 500
 
 # Define Issue-Book-Form
 class IssueBook(Form):
@@ -1068,21 +1215,163 @@ def generate_access_token():
     return secrets.token_urlsafe(32)
 
 # Function to Send Secure Email
-def send_email(member_email, book_title, access_token):
-    access_link = f"http://127.0.0.1:5000/view-digital-book/{access_token}"
+def send_email(member_email, book_title, access_token, member_name=None, expiry_date=None, book_author=None, purchase_id=None):
+    """
+    Send a professional email notification for digital book purchases with detailed information.
     
-    subject = f"Your Digital Book Purchase: {book_title}"
-    body = f"Hello,\n\nYou have successfully purchased '{book_title}'. Click the link below to view your book:\n\n{access_link}\n\nNote: This link is unique to you and expires in 7 days."
+    Args:
+        member_email (str): Recipient's email address
+        book_title (str): Title of the purchased digital book
+        access_token (str): Unique token for accessing the digital book
+        member_name (str, optional): Name of the member who made the purchase
+        expiry_date (datetime, optional): When the access token expires
+        book_author (str, optional): Author of the purchased book
+        purchase_id (int, optional): Purchase transaction ID for reference
     
-    msg = MIMEText(body)
-    msg["Subject"] = subject
-    msg["From"] = "sikhakollishankar0503@gmail.com"
-    msg["To"] = member_email
-    
-    with smtplib.SMTP("smtp.gmail.com", 587) as server:
-        server.starttls()
-        server.login("sikhakollishankar0503@gmail.com", "cicj huni rsfi ouaw")
-        server.sendmail("sikhakollishankar0503@gmail.com", "sikhakollishanka16@gmail.com", msg.as_string())
+    Returns:
+        tuple: (success_boolean, message_string)
+    """
+    try:
+        # Load email configuration from environment variables for security
+        smtp_server = "smtp.gmail.com"
+        smtp_port = 587
+        sender_email = "sikhakollishankar0503@gmail.com"
+        sender_password = "cicj huni rsfi ouaw"
+        
+        if not sender_password:
+            app.logger.error("Email password not configured in environment variables")
+            return False, "Email configuration error: missing password"
+        
+        # Validate inputs
+        if not all([member_email, book_title, access_token]):
+            app.logger.error("Missing required email parameters")
+            return False, "Missing required parameters"
+            
+        # Set defaults for optional parameters
+        member_name = member_name or "Valued Customer"
+        expiry_date = expiry_date or (datetime.now() + timedelta(days=7))
+        # receipt_number = f"LIB-{purchase_id}" if purchase_id else f"LIB-{int(datetime.time())}"
+        
+        # Create secure access link with HTTPS for production
+        base_url = "http://127.0.0.1:5000"
+        access_link = f"{base_url}/view-digital-book/{access_token}"
+        
+        # Create a multipart message for both plain text and HTML
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = f"Your Digital Book Purchase: {book_title}"
+        msg["From"] = sender_email
+        msg["To"] = member_email
+        # msg["Message-ID"] = f"<{uuid.uuid4()}@library.com>"
+        # msg["Date"] = formatdate(localtime=True)
+        # msg["X-Receipt-Number"] = receipt_number
+        
+        # Plain text version of the email
+        text_body = f"""Hello {member_name},
+
+Thank you for your purchase of '{book_title}'{' by ' + book_author if book_author else ''}!
+
+Your purchase details:
+- Book: {book_title}
+- Purchase Date: {datetime.now().strftime('%B %d, %Y')}
+- Access Expires: {expiry_date.strftime('%B %d, %Y')}
+
+To view your digital book, please visit:
+{access_link}
+
+Important Notes:
+- This link is personal and unique to your account
+- The access link will expire on {expiry_date.strftime('%B %d, %Y')}
+- Do not share this link with others as it's connected to your account
+
+If you experience any issues accessing your digital book, please contact our support team.
+
+Thank you for using our digital library services!
+
+Best regards,
+Library Management Team
+"""
+        # HTML version of the email
+        html_body = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <div style="background-color: #f0f5ff; padding: 20px; border-radius: 5px; border-left: 4px solid #3366cc;">
+        <h2 style="color: #3366cc; margin-top: 0;">Your Digital Book Purchase</h2>
+        <p>Hello <strong>{member_name}</strong>,</p>
+        
+        <p>Thank you for your purchase of <strong>'{book_title}'</strong>{' by <em>' + book_author + '</em>' if book_author else ''}!</p>
+        
+        <div style="background-color: white; border-radius: 5px; padding: 15px; margin: 20px 0; border: 1px solid #e0e0e0;">
+            <h3 style="margin-top: 0; color: #3366cc;">Purchase Details</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <td style="padding: 8px 0; border-bottom: 1px solid #eee; width: 40%;"><strong>Book:</strong></td>
+                    <td style="padding: 8px 0; border-bottom: 1px solid #eee;">{book_title}</td>
+                </tr>
+                
+                <tr>
+                    <td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Purchase Date:</strong></td>
+                    <td style="padding: 8px 0; border-bottom: 1px solid #eee;">{datetime.now().strftime('%B %d, %Y')}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Access Expires:</strong></td>
+                    <td style="padding: 8px 0; border-bottom: 1px solid #eee;">{expiry_date.strftime('%B %d, %Y')}</td>
+                </tr>
+            </table>
+        </div>
+        
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="{access_link}" style="background-color: #3366cc; color: white; padding: 12px 25px; text-decoration: none; border-radius: 4px; font-weight: bold; display: inline-block;">Access Your Digital Book</a>
+        </div>
+        
+        <div style="background-color: #fff4e5; padding: 15px; border-radius: 5px; margin-top: 20px; border-left: 4px solid #ff9900;">
+            <h4 style="margin-top: 0; color: #ff9900;">Important Notes:</h4>
+            <ul style="padding-left: 20px; margin-bottom: 0;">
+                <li>This link is personal and unique to your account</li>
+                <li>The access link will expire on <strong>{expiry_date.strftime('%B %d, %Y')}</strong></li>
+                <li>Do not share this link with others as it's connected to your account</li>
+            </ul>
+        </div>
+        
+        <p style="margin-top: 30px;">If you experience any issues accessing your digital book, please contact our support team.</p>
+        
+        <p>Thank you for using our digital library services!</p>
+        
+        <p style="margin-bottom: 0;">Best regards,<br>
+        <strong>Library Management Team</strong></p>
+    </div>
+    <div style="text-align: center; font-size: 12px; color: #777; margin-top: 20px;">
+        &copy; {datetime.now().year} Digital Library System. All rights reserved.
+    </div>
+</body>
+</html>
+"""
+        # Attach both versions to the email
+        msg.attach(MIMEText(text_body, "plain"))
+        msg.attach(MIMEText(html_body, "html"))
+        
+        # Connect to the SMTP server and send the email
+        try:
+            with smtplib.SMTP(smtp_server, smtp_port) as server:
+                server.starttls()
+                server.login(sender_email, sender_password)
+                server.send_message(msg)
+                
+            # Log successful email delivery
+            app.logger.info(f"Digital book access email sent to {member_email} for book '{book_title}'")
+            return True, f"Email successfully sent to {member_email}"
+            
+        except smtplib.SMTPException as smtp_error:
+            app.logger.error(f"SMTP error: {str(smtp_error)}")
+            return False, f"Failed to send email: {str(smtp_error)}"
+            
+    except Exception as e:
+        app.logger.error(f"Unexpected error sending email: {str(e)}")
+        return False, f"An unexpected error occurred: {str(e)}"
 
 # Route to Issue Digital Book
 @app.route('/issue_digital_book', methods=['GET', 'POST'])
@@ -1162,7 +1451,7 @@ def digital_books_transactions():
     connection.close()
 
     if purchases:
-        return render_template('digital_books_transactions.html', purchases=purchases)
+        return render_template('digital_books_transactions.html', purchases=purchases, now=datetime.now())
     else:
         flash("No purchases found", "warning")
         return render_template('digital_books_transactions.html', purchases=[])
@@ -1185,10 +1474,6 @@ def view_digital_book(token):
     # Securely serve file
     else:
         return "Invalid or expired access link", 403
-
-
-if __name__ == "__main__":
-    app.run(debug=True)
 
 
 

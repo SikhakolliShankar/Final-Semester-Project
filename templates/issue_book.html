@@ -1,19 +1,43 @@
 {% extends 'layout.html' %}
 {% block body %}
-<br>
-<h1>Issue Book to Member</h1>
-{% from "includes/_formhelpers.html" import render_field %}
-<form method="POST" action="">
-    <div class="form-group">
-        {{render_field(form.book_id, class_="form-control")}}
-    </div><br>
-    <div class="form-group">
-        {{render_field(form.member_id, class_="form-control")}}
-    </div><br>
-    <div class="form-group">
-        {{render_field(form.per_day_fee, class_="form-control")}}
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-7 col-md-9 col-sm-11">
+      <div class="card shadow border-0 rounded-lg">
+        <div class="card-header bg-primary text-white text-center py-3">
+          <h2 class="fs-4 mb-0">Issue Book to Member</h2>
+        </div>
+        <div class="card-body p-4">
+          {% from "includes/_formhelpers.html" import render_field %}
+          <form method="POST" action="">
+            <!-- Book ID field -->
+            <div class="mb-4">
+              <!-- <label class="form-label fw-bold mb-2">Book ID</label> -->
+              {{render_field(form.book_id, class_="form-control", placeholder="Enter book ID")}}
+            </div>
+            
+            <!-- Member ID field -->
+            <div class="mb-4">
+              <!-- <label class="form-label fw-bold mb-2">Member ID</label> -->
+              {{render_field(form.member_id, class_="form-control", placeholder="Enter member ID")}}
+            </div>
+            
+            <!-- Per Day Fee field -->
+            <div class="mb-4">
+              <!-- <label class="form-label fw-bold mb-2">Per Day Fee</label> -->
+              {{render_field(form.per_day_fee, class_="form-control", placeholder="Enter fee amount")}}
+            </div>
+            
+            <!-- Submit button -->
+            <div class="d-grid gap-2 mt-4">
+              <button type="submit" class="btn btn-primary py-2" value="Submit">
+                Issue Book
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
-    <br>
-    <p><button type="submit" class="btn btn-primary" value="Submit">Submit</button></p>
-</form>
+  </div>
+</div>
 {% endblock %}

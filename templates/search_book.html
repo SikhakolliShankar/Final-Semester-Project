@@ -1,55 +1,403 @@
 {% extends 'layout.html' %}
+
+{% block title %}Search Books | Library Management System{% endblock %}
+
+{% block styles %}
+<style>
+  /* Search form styling */
+  .search-container {
+    background: linear-gradient(135deg, #f6f9fc, #eef2f7);
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .search-container::before {
+    content: '';
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    width: 100px;
+    height: 100px;
+    background: linear-gradient(135deg, var(--primary-light) 20%, transparent 80%);
+    border-radius: 50%;
+    opacity: 0.3;
+    z-index: 0;
+  }
+  
+  .search-title {
+    font-weight: 700;
+    color: var(--dark);
+    margin-bottom: 1.5rem;
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+  }
+  
+  .search-title i {
+    margin-right: 0.75rem;
+    color: var(--primary);
+    font-size: 1.4rem;
+  }
+  
+  .search-form {
+    position: relative;
+    z-index: 1;
+  }
+  
+  .search-form .form-control {
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+    transition: all 0.3s ease;
+  }
+  
+  .search-form .form-control:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+  }
+  
+  .search-form label {
+    font-weight: 600;
+    color: var(--dark);
+    margin-bottom: 0.5rem;
+  }
+  
+  .search-btn {
+    background-color: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(79, 70, 229, 0.2);
+  }
+  
+  .search-btn:hover {
+    background-color: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 10px rgba(79, 70, 229, 0.3);
+  }
+  
+  .search-btn i {
+    margin-right: 0.5rem;
+  }
+  
+  /* Results section styling */
+  .results-container {
+    background-color: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    margin-bottom: 2rem;
+  }
+  
+  .results-header {
+    background: linear-gradient(to right, #f8fafc, #f1f5f9);
+    padding: 1.5rem;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  
+  .results-title {
+    font-weight: 700;
+    margin: 0;
+    color: var(--dark);
+    display: flex;
+    align-items: center;
+  }
+  
+  .results-title i {
+    margin-right: 0.75rem;
+    color: var(--primary);
+  }
+  
+  .results-count {
+    background-color: var(--primary);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.875rem;
+    margin-left: 0.75rem;
+  }
+  
+  .table-container {
+    padding: 0.5rem;
+    overflow-x: auto;
+  }
+  
+  /* Enhanced table styling */
+  .book-table {
+    margin-bottom: 0;
+  }
+  
+  .book-table thead th {
+    background-color: #f8fafc;
+    font-weight: 600;
+    color: var(--dark);
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+    padding: 1rem 0.75rem;
+    border-top: none;
+    border-bottom: 2px solid #e2e8f0;
+  }
+  
+  .book-table tbody tr {
+    transition: all 0.2s ease;
+  }
+  
+  .book-table tbody tr:hover {
+    background-color: rgba(79, 70, 229, 0.05);
+  }
+  
+  .book-id {
+    font-weight: 600;
+    background-color: var(--dark);
+    color: white;
+    border: none;
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    display: inline-block;
+  }
+  
+  .book-id:hover {
+    background-color: #374151;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .edit-btn {
+    background-color: var(--primary);
+    color: white;
+    border: none;
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    text-decoration: none;
+  }
+  
+  .edit-btn:hover {
+    background-color: var(--primary-dark);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .delete-btn {
+    background-color: var(--danger);
+    color: white;
+    border: none;
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+  }
+  
+  .delete-btn:hover {
+    background-color: #b91c1c;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .table-cell {
+    vertical-align: middle;
+  }
+  
+  .book-title {
+    font-weight: 600;
+    color: var(--dark);
+  }
+  
+  .book-author {
+    color: var(--gray);
+  }
+  
+  .quantity {
+    font-weight: 500;
+  }
+  
+  .available {
+    color: var(--success);
+  }
+  
+  .rented {
+    color: var(--warning);
+  }
+  
+  .no-results {
+    padding: 3rem;
+    text-align: center;
+    color: var(--gray);
+  }
+  
+  .no-results i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.3;
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    .search-container, .results-container {
+      border-radius: 8px;
+      padding: 1rem;
+    }
+    
+    .action-buttons {
+      display: flex;
+      gap: 0.5rem;
+    }
+  }
+</style>
+{% endblock %}
+
 {% block body %}
-<br>
-<h1>Search for a Book</h1>
-{% from "includes/_formhelpers.html" import render_field %}
-<form method="POST" action="">
-    <div class="form-group">
-        {{render_field(form.title, class_="form-control")}}
-    </div><br>
-    <div class="form-group">
-        {{render_field(form.author, class_="form-control")}}
-    </div><br>
-    <p><button type="submit" class="btn btn-primary" value="Submit">Submit</button></p>
-</form>
+<div class="page-header">
+  <h1>Book Management</h1>
+  <p class="text-muted">Search, view, and manage books in your library</p>
+</div>
+
+<!-- Enhanced Search Form -->
+<div class="search-container">
+  <h2 class="search-title">
+    <i class="fas fa-search"></i>
+    Find Books in Library
+  </h2>
+  
+  {% from "includes/_formhelpers.html" import render_field %}
+  <form method="POST" action="" class="search-form">
+    <div class="row">
+      <div class="col-md-5 mb-3">
+        <div class="form-group">
+          {{render_field(form.title, class_="form-control", placeholder="Enter book title")}}
+        </div>
+      </div>
+      <div class="col-md-5 mb-3">
+        <div class="form-group">
+          {{render_field(form.author, class_="form-control", placeholder="Enter author name")}}
+        </div>
+      </div>
+      <div class="col-md-2 d-flex align-items-end mb-3">
+        <button type="submit" class="search-btn w-100" value="Submit">
+          <i class="fas fa-search"></i> Search
+        </button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<!-- Enhanced Results Section -->
 {% if books %}
-<br>
-<h1>Search Results: </h1>
-<hr>
-<table class="table table-hover table-striped">
-    <thead>
+<div class="results-container">
+  <div class="results-header">
+    <h2 class="results-title">
+      <i class="fas fa-book-open"></i>
+      Search Results
+      <span class="results-count">{{ books|length }}</span>
+    </h2>
+  </div>
+  
+  <div class="table-container">
+    <table class="table table-hover table-striped book-table">
+      <thead>
         <tr>
-            <th>Book ID</th>
-            <th>Title</th>
-            <th>Author(s)</th>
-            <th>Total No. of Books</th>
-            <th>Books Available to Rent</th>
-            <th>Rented Count</th>
-            <th></th>
-            <th></th>
-            <th></th>
+          <th width="8%">Book ID</th>
+          <th width="20%">Title</th>
+          <th width="20%">Author(s)</th>
+          <th width="10%">Total</th>
+          <th width="10%">Available</th>
+          <th width="10%">Rented</th>
+          <th width="22%" class="text-end">Actions</th>
         </tr>
-    </thead>
-    <tbody>
+      </thead>
+      <tbody>
         {% for book in books %}
-        <tr style="cursor:pointer;">
-            <td><a href="/book/{{book.id}}" class="btn btn-dark pull-right">{{"{:05d}".format(book.id)}}</a></td>
-            <td onclick="window.location='/book/{{book.id}}';">{{book.title}}</td>
-            <td onclick="window.location='/book/{{book.id}}';">{{book.author}}</td>
-            <td onclick="window.location='/book/{{book.id}}';">{{book.total_quantity}}</td>
-            <td onclick="window.location='/book/{{book.id}}';">{{book.available_quantity}}</td>
-            <td onclick="window.location='/book/{{book.id}}';">{{book.rented_count}}</td>
-            <td><a href="edit_book/{{book.id}}" class="btn btn-primary pull-right">Edit</a></td>
-            <td>
-                <form action="{{url_for('delete_book', id=book.id)}}" method="POST"
+        <tr>
+          <td class="table-cell">
+            <a href="/book/{{book.id}}" class="book-id">
+              {{"{:05d}".format(book.id)}}
+            </a>
+          </td>
+          <td class="table-cell book-title" onclick="window.location='/book/{{book.id}}';">
+            {{book.title}}
+          </td>
+          <td class="table-cell book-author" onclick="window.location='/book/{{book.id}}';">
+            {{book.author}}
+          </td>
+          <td class="table-cell quantity" onclick="window.location='/book/{{book.id}}';">
+            {{book.total_quantity}}
+          </td>
+          <td class="table-cell quantity available" onclick="window.location='/book/{{book.id}}';">
+            {{book.available_quantity}}
+          </td>
+          <td class="table-cell quantity rented" onclick="window.location='/book/{{book.id}}';">
+            {{book.rented_count}}
+          </td>
+          <td class="table-cell text-end">
+            <div class="action-buttons">
+              <a href="edit_book/{{book.id}}" class="edit-btn">
+                <i class="fas fa-edit"></i> Edit
+              </a>
+              <form action="{{url_for('delete_book', id=book.id)}}" method="POST" 
+                    class="d-inline-block"
                     onsubmit="return confirm('Are you sure you want to delete this book?');">
-                    <input type="hidden" name="method" value="Delete">
-                    <input type="submit" value="Delete" class="btn btn-danger">
-                </form>
-            </td>
+                <input type="hidden" name="method" value="Delete">
+                <button type="submit" class="delete-btn">
+                  <i class="fas fa-trash"></i> Delete
+                </button>
+              </form>
+            </div>
+          </td>
         </tr>
         {% endfor %}
-    </tbody>
-</table>
+      </tbody>
+    </table>
+  </div>
+</div>
+{% elif request.method == "POST" %}
+<div class="results-container">
+  <div class="results-header">
+    <h2 class="results-title">
+      <i class="fas fa-book-open"></i>
+      Search Results
+      <span class="results-count">0</span>
+    </h2>
+  </div>
+  
+  <div class="no-results">
+    <i class="fas fa-search"></i>
+    <h4>No books found matching your search criteria</h4>
+    <p>Try broadening your search terms or check for spelling errors</p>
+  </div>
+</div>
 {% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Add animation to search results
+  document.addEventListener('DOMContentLoaded', function() {
+    const rows = document.querySelectorAll('.book-table tbody tr');
+    
+    rows.forEach((row, index) => {
+      row.style.opacity = '0';
+      row.style.transform = 'translateY(10px)';
+      row.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+      
+      setTimeout(() => {
+        row.style.opacity = '1';
+        row.style.transform = 'translateY(0)';
+      }, 50 * index);
+    });
+  });
+</script>
 {% endblock %}

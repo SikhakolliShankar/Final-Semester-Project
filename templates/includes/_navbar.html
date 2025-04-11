@@ -1,27 +1,290 @@
-<nav class="navbar navbar-expand-md navbar-dark bg-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="/"><b>LibMS</b></a>
-        <div class="collapse navbar-collapse" id="navbarCollapse">
-            <ul class="navbar-nav me-auto mb-2 mb-md-0">
-                <li class="nav-item">
-                    <a class="nav-link" href="/reports">Reports</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/books">Books</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/members">Members</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/transactions">Transactions</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/search_book">Search</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/digital_books">Digital Books</a>
-                </li>
-            </ul>
-        </div>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Creative LibMS Navbar</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #6366f1;
+      --secondary: #4f46e5;
+      --accent: #818cf8;
+      --light: #f3f4f6;
+      --dark: #1f2937;
+      --danger: #ef4444;
+      --danger-hover: #dc2626;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f8f9fa;
+      padding-top: 80px;
+    }
+    
+    .navbar {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      padding: 0.5rem 1rem;
+      transition: all 0.3s ease;
+    }
+    
+    .navbar-brand {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: white;
+      position: relative;
+      padding-left: 2.2rem;
+    }
+    
+    .navbar-brand:before {
+      content: "📚";
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 1.4rem;
+    }
+    
+    .navbar-nav .nav-item {
+      position: relative;
+      margin: 0 0.2rem;
+    }
+    
+    .navbar-dark .navbar-nav .nav-link {
+      color: rgba(255, 255, 255, 0.85);
+      font-weight: 500;
+      padding: 0.8rem 1rem;
+      border-radius: 0.5rem;
+      transition: all 0.2s ease;
+    }
+    
+    .navbar-dark .navbar-nav .nav-link:hover,
+    .navbar-dark .navbar-nav .nav-link:focus {
+      color: white;
+      background-color: rgba(255, 255, 255, 0.15);
+      transform: translateY(-2px);
+    }
+    
+    .navbar-dark .navbar-nav .nav-link.active {
+      color: white;
+      background-color: rgba(255, 255, 255, 0.2);
+    }
+    
+    .nav-icon {
+      margin-right: 0.5rem;
+      font-size: 0.9rem;
+    }
+    
+    .navbar-toggler {
+      border: none;
+      background: rgba(255, 255, 255, 0.2);
+      padding: 0.5rem;
+      border-radius: 0.5rem;
+    }
+    
+    .navbar-toggler:focus {
+      box-shadow: 0 0 0 0.25rem rgba(255, 255, 255, 0.2);
+    }
+    
+    /* Logout button styling */
+    .logout-btn {
+      color: white;
+      background-color: var(--danger);
+      border-radius: 2rem;
+      padding: 0.6rem 1.2rem;
+      margin-left: 0.5rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      border: none;
+    }
+    
+    .logout-btn:hover {
+      background-color: var(--danger-hover);
+      transform: translateY(-3px);
+      box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+    }
+    
+    .logout-btn .nav-icon {
+      margin-right: 0.4rem;
+      font-size: 1rem;
+      transition: transform 0.3s ease;
+    }
+    
+    .logout-btn:hover .nav-icon {
+      transform: translateX(-2px);
+    }
+    
+    .logout-btn .nav-text {
+      position: relative;
+    }
+    
+    .logout-btn .nav-text:after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background-color: white;
+      transition: width 0.3s ease;
+    }
+    
+    .logout-btn:hover .nav-text:after {
+      width: 100%;
+    }
+
+    /* Animation for mobile menu */
+    @media (max-width: 767.98px) {
+      .navbar-collapse {
+        background: linear-gradient(135deg, var(--secondary), var(--primary));
+        border-radius: 0 0 1rem 1rem;
+        padding: 1rem;
+        margin-top: 0.5rem;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+      }
+      
+      .navbar-nav .nav-item {
+        margin: 0.3rem 0;
+      }
+      
+      .navbar-dark .navbar-nav .nav-link {
+        border-radius: 0.75rem;
+        padding: 0.75rem 1rem;
+        text-align: left;
+      }
+      
+      .logout-btn {
+        margin: 0.5rem 0;
+        width: 100%;
+        justify-content: center;
+      }
+    }
+    
+    /* Tablet optimization */
+    @media (min-width: 768px) and (max-width: 991.98px) {
+      .navbar-dark .navbar-nav .nav-link {
+        font-size: 0.9rem;
+        padding: 0.7rem 0.8rem;
+      }
+      
+      .nav-link .nav-text {
+        display: none;
+      }
+      
+      .nav-link .nav-icon {
+        margin-right: 0;
+        font-size: 1.1rem;
+      }
+      
+      .logout-btn .nav-text {
+        display: inline;
+      }
+      
+      .logout-btn .nav-icon {
+        margin-right: 0.4rem;
+      }
+    }
+    
+    /* Desktop enhancements */
+    @media (min-width: 992px) {
+      .navbar-dark .navbar-nav .nav-link:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+      
+      .nav-divider {
+        width: 1px;
+        height: 24px;
+        background-color: rgba(255, 255, 255, 0.3);
+        margin: 0 0.5rem;
+      }
+    }
+
+    /* Pulse animation for logout button */
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+    
+    .logout-animation:hover {
+      animation: pulse 1.5s infinite;
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-expand-md navbar-dark fixed-top">
+    <div class="container">
+      <a class="navbar-brand" href="{{ url_for('index') }}">LibMS</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarCollapse">
+        <ul class="navbar-nav ms-auto mb-2 mb-md-0">
+          <li class="nav-item">
+            <a class="nav-link" href="/reports">
+              <i class="fas fa-chart-bar nav-icon"></i>
+              <span class="nav-text">Reports</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/books">
+              <i class="fas fa-book nav-icon"></i>
+              <span class="nav-text">Books</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/members">
+              <i class="fas fa-users nav-icon"></i>
+              <span class="nav-text">Members</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/transactions">
+              <i class="fas fa-exchange-alt nav-icon"></i>
+              <span class="nav-text">Transactions</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/search_book">
+              <i class="fas fa-search nav-icon"></i>
+              <span class="nav-text">Search</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/digital_books">
+              <i class="fas fa-tablet-alt nav-icon"></i>
+              <span class="nav-text">Digital Books</span>
+            </a>
+          </li>
+          <div class="nav-divider d-none d-lg-block"></div>
+          <li class="nav-item">
+            <a class="nav-link logout-btn logout-animation" href="/logout">
+              <i class="fas fa-sign-out-alt nav-icon"></i>
+              <span class="nav-text">Logout</span>
+            </a>
+          </li>
+        </ul>
+      </div>
     </div>
-</nav>
+  </nav>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Add active class to current nav item
+    document.addEventListener('DOMContentLoaded', function() {
+      const currentPath = window.location.pathname;
+      const navLinks = document.querySelectorAll('.nav-link');
+      
+      navLinks.forEach(link => {
+        if (link.getAttribute('href') === currentPath) {
+          link.classList.add('active');
+        }
+      });
+    });
+  </script>
+</body>

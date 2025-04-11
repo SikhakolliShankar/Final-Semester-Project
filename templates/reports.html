@@ -1,59 +1,422 @@
 {% extends 'layout.html' %}
 {% block body %}
-<br>
-<h1>Reports</h1>
-<hr>
-<br>
-{% if books%}
-<h3>Most Popular Books</h3>
-<table class="table table-striped table-hover">
-    <thead>
-        <tr>
-            <th>Book ID</th>
-            <th>Title</th>
-            <th>Author(s)</th>
-            <th>Total No. of Books</th>
-            <th>Books Available to Rent</th>
-            <th>Rented Count</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for book in books %}
-        <tr style="cursor:pointer;">
-            <td><a href="/book/{{book.id}}" class="btn btn-dark pull-right">{{"{:05d}".format(book.id)}}</a></td>
-            <td onclick="window.location='/book/{{book.id}}';">{{book.title}}</td>
-            <td onclick="window.location='/book/{{book.id}}';">{{book.author}}</td>
-            <td onclick="window.location='/book/{{book.id}}';">{{book.total_quantity}}</td>
-            <td onclick="window.location='/book/{{book.id}}';">{{book.available_quantity}}</td>
-            <td onclick="window.location='/book/{{book.id}}';">{{book.rented_count}}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-{% endif %}
 
-{% if members%}
-<br>
-<h3>Highest Paying Customers</h3>
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>Member ID</th>
-            <th>Name</th>
-            <th>Amount Spent</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for member in members %}
-        <tr>
-            <td>
-                <a href="member/{{member.id}}" class="btn btn-dark pull-right">{{"{:03d}".format(member.id)}}</a>
-            </td>
-            <td>{{member.name}}</td>
-            <td>{{member.amount_spent}}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-{% endif %}
-{% endblock %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LibMS - Reports</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #6366f1;
+      --secondary: #4f46e5;
+      --accent: #818cf8;
+      --light: #f3f4f6;
+      --dark: #1f2937;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f8f9fa;
+      padding-top: 80px;
+    }
+    
+    /* Navbar styles */
+    .navbar {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      padding: 0.5rem 1rem;
+      transition: all 0.3s ease;
+    }
+    
+    .navbar-brand {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: white;
+      position: relative;
+      padding-left: 2.2rem;
+    }
+    
+    .navbar-brand:before {
+      content: "📚";
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 1.4rem;
+    }
+    
+    .navbar-nav .nav-item {
+      position: relative;
+      margin: 0 0.2rem;
+    }
+    
+    .navbar-dark .navbar-nav .nav-link {
+      color: rgba(255, 255, 255, 0.85);
+      font-weight: 500;
+      padding: 0.8rem 1rem;
+      border-radius: 0.5rem;
+      transition: all 0.2s ease;
+    }
+    
+    .navbar-dark .navbar-nav .nav-link:hover,
+    .navbar-dark .navbar-nav .nav-link:focus {
+      color: white;
+      background-color: rgba(255, 255, 255, 0.15);
+      transform: translateY(-2px);
+    }
+    
+    /* Reports page styles */
+    .page-header {
+      position: relative;
+      background: linear-gradient(45deg, #e2e8f0, #f8fafc);
+      border-radius: 16px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+      overflow: hidden;
+    }
+    
+    .page-header::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 100px;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8));
+      z-index: 1;
+    }
+    
+    .page-header h1 {
+      font-weight: 800;
+      color: var(--dark);
+      margin: 0;
+      position: relative;
+      z-index: 2;
+    }
+    
+    .report-card {
+      background-color: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.08);
+      margin-bottom: 2rem;
+      transition: transform 0.2s, box-shadow 0.2s;
+      overflow: hidden;
+    }
+    
+    .report-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 15px rgba(0, 0, 0, 0.05), 0 4px 6px rgba(0, 0, 0, 0.05);
+    }
+    
+    .report-header {
+      padding: 1.5rem;
+      background: linear-gradient(to right, #f9fafb, #f3f4f6);
+      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    .report-header h3 {
+      margin: 0;
+      font-weight: 700;
+      color: var(--dark);
+      display: flex;
+      align-items: center;
+      font-size: 1.3rem;
+    }
+    
+    .report-header h3 i {
+      margin-right: 0.75rem;
+      color: var(--primary);
+      font-size: 1.2rem;
+    }
+    
+    .report-body {
+      padding: 0.5rem;
+    }
+    
+    .table {
+      margin-bottom: 0;
+    }
+    
+    .table thead th {
+      background-color: #f9fafb;
+      border-bottom: 2px solid #e5e7eb;
+      padding: 1rem 0.75rem;
+      font-weight: 600;
+      color: var(--dark);
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .table tbody tr {
+      transition: background-color 0.2s;
+    }
+    
+    .table tbody tr:hover {
+      background-color: rgba(99, 102, 241, 0.05);
+    }
+    
+    .btn-book-id {
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      padding: 0.4rem 0.8rem;
+      border-radius: 6px;
+      font-weight: 500;
+      transition: all 0.2s;
+      text-decoration: none;
+      display: inline-block;
+    }
+    
+    .btn-book-id:hover {
+      background-color: var(--secondary);
+      transform: translateY(-2px);
+      box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .btn-member-id {
+      background-color: var(--dark);
+      color: white;
+      border: none;
+      padding: 0.4rem 0.8rem;
+      border-radius: 6px;
+      font-weight: 500;
+      transition: all 0.2s;
+      text-decoration: none;
+      display: inline-block;
+    }
+    
+    .btn-member-id:hover {
+      background-color: #2d3748;
+      transform: translateY(-2px);
+      box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .amount-spent {
+      font-weight: 600;
+      color: var(--success);
+    }
+    
+    .book-available {
+      color: var(--success);
+      font-weight: 500;
+    }
+    
+    .book-rented {
+      color: var(--warning);
+      font-weight: 500;
+    }
+    
+    .clickable {
+      cursor: pointer;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+      .table-responsive {
+        border-radius: 8px;
+      }
+      
+      .report-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      
+      .report-header h3 {
+        margin-bottom: 0.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-md navbar-dark fixed-top">
+    <div class="container">
+      <a class="navbar-brand" href="/">LibMS</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarCollapse">
+        <ul class="navbar-nav ms-auto mb-2 mb-md-0">
+          <li class="nav-item">
+            <a class="nav-link active" href="/reports">
+              <i class="fas fa-chart-bar me-1"></i> Reports
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/books">
+              <i class="fas fa-book me-1"></i> Books
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/members">
+              <i class="fas fa-users me-1"></i> Members
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/transactions">
+              <i class="fas fa-exchange-alt me-1"></i> Transactions
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/search_book">
+              <i class="fas fa-search me-1"></i> Search
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/digital_books">
+              <i class="fas fa-tablet-alt me-1"></i> Digital Books
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <div class="container">
+    <!-- Page Header -->
+    <div class="page-header">
+      <h1><i class="fas fa-chart-line me-3"></i>Library Reports</h1>
+    </div>
+    
+    <!-- Popular Books Report -->
+    <div class="report-card">
+      <div class="report-header">
+        <h3><i class="fas fa-book-reader"></i>Most Popular Books</h3>
+        <div>
+          <button class="btn btn-sm btn-outline-primary" id="exportBooks">
+            <i class="fas fa-file-export me-1"></i>Export
+          </button>
+        </div>
+      </div>
+      <div class="report-body">
+        <div class="table-responsive">
+          <table class="table table-striped table-hover">
+            <thead>
+              <tr>
+                <th>Book ID</th>
+                <th>Title</th>
+                <th>Author(s)</th>
+                <th>Total Copies</th>
+                <th>Available</th>
+                <th>Times Rented</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Sample data to show styling -->
+              <tr class="clickable">
+                <td><a href="/book/1" class="btn-book-id">00001</a></td>
+                <td>To Kill a Mockingbird</td>
+                <td>Harper Lee</td>
+                <td>5</td>
+                <td class="book-available">3</td>
+                <td class="book-rented">42</td>
+              </tr>
+              <tr class="clickable">
+                <td><a href="/book/2" class="btn-book-id">00002</a></td>
+                <td>1984</td>
+                <td>George Orwell</td>
+                <td>8</td>
+                <td class="book-available">1</td>
+                <td class="book-rented">37</td>
+              </tr>
+              <tr class="clickable">
+                <td><a href="/book/3" class="btn-book-id">00003</a></td>
+                <td>Pride and Prejudice</td>
+                <td>Jane Austen</td>
+                <td>4</td>
+                <td class="book-available">2</td>
+                <td class="book-rented">28</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Highest Paying Customers Report -->
+    <div class="report-card">
+      <div class="report-header">
+        <h3><i class="fas fa-crown"></i>Highest Paying Members</h3>
+        <div>
+          <button class="btn btn-sm btn-outline-primary" id="exportMembers">
+            <i class="fas fa-file-export me-1"></i>Export
+          </button>
+        </div>
+      </div>
+      <div class="report-body">
+        <div class="table-responsive">
+          <table class="table table-striped table-hover">
+            <thead>
+              <tr>
+                <th>Member ID</th>
+                <th>Name</th>
+                <th>Amount Spent</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Sample data to show styling -->
+              <tr class="clickable">
+                <td><a href="/member/1" class="btn-member-id">001</a></td>
+                <td>John Smith</td>
+                <td class="amount-spent">$245.50</td>
+              </tr>
+              <tr class="clickable">
+                <td><a href="/member/2" class="btn-member-id">002</a></td>
+                <td>Sarah Johnson</td>
+                <td class="amount-spent">$198.75</td>
+              </tr>
+              <tr class="clickable">
+                <td><a href="/member/3" class="btn-member-id">003</a></td>
+                <td>Michael Brown</td>
+                <td class="amount-spent">$187.20</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Clickable rows
+    document.addEventListener('DOMContentLoaded', function() {
+      const clickableRows = document.querySelectorAll('.clickable');
+      
+      clickableRows.forEach(row => {
+        const link = row.querySelector('a').getAttribute('href');
+        
+        // Skip the cell with the button
+        const cells = row.querySelectorAll('td:not(:first-child)');
+        cells.forEach(cell => {
+          cell.addEventListener('click', () => {
+            window.location.href = link;
+          });
+        });
+      });
+      
+      // Export buttons (demo functionality)
+      document.getElementById('exportBooks').addEventListener('click', function() {
+        alert('Exporting Popular Books Report...');
+      });
+      
+      document.getElementById('exportMembers').addEventListener('click', function() {
+        alert('Exporting Highest Paying Members Report...');
+      });
+    });
+  </script>
+</body>
+</html>{% endblock %}

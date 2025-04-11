@@ -1,102 +1,290 @@
 {% extends 'layout.html' %}
 {% block body %}
-<br>
-<h1>Transactions</h1>
-<a class="btn btn-success" href="/issue_book">Issue Book</a>
-<hr>
-{% if transactions %}
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>Transaction ID</th>
-            <th>Book ID</th>
-            <th>Member ID</th>
-            <th>Per Day Renting Fee</th>
-            <th>Borrowed On</th>
-            <th>Returned On</th>
-            <th>Total Charge</th>
-            <th>Amount Paid</th>
-            <th>Return</th>
-            <th>Delete a Transaction</th>
-            <th>Email Alert</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for transaction in transactions %}
-        <tr>
-            <td>{{transaction.id}}</td>
-            <td>
-                <a href="book/{{transaction.book_id}}"
-                    class="btn btn-dark pull-right">{{"{:05d}".format(transaction.book_id)}}</a>
-            </td>
-            <td>
-                <a href="member/{{transaction.member_id}}"
-                    class="btn btn-dark pull-right">{{"{:03d}".format(transaction.member_id)}}</a>
-            </td>
-            <td>{{transaction.per_day_fee}}</td>
-            <td class="borrowed-date" data-borrowed="{{transaction.borrowed_on}}">{{transaction.borrowed_on}}</td>
-            <td>{{transaction.returned_on}}</td>
-            <td>{{transaction.total_charge}}</td>
-            <td>{{transaction.amount_paid}}</td>
-            {% if transaction.amount_paid=='-' %}
-            <td><a href="return_book/{{transaction.id}}" class="btn btn-danger pull-right">Return</a></td>
-            {% else %}
-            <td>CLOSED</td>
-            {% endif %}
+<div class="container py-4">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="mb-0"><i class="bi bi-arrow-left-right me-2"></i>Transactions</h1>
+            <p class="text-muted">Manage book borrowing and returns</p>
+        </div>
+        <div>
+            <a class="btn btn-success d-flex align-items-center" href="/issue_book">
+                <i class="bi bi-journal-arrow-up me-2"></i>Issue Book
+            </a>
+        </div>
+    </div>
 
-            {% if transaction.amount_paid==transaction.total_charge %}
-            <td><a href="transaction/{{transaction.id}}" class="btn btn-Primary pull-right">Delete</a></td>
-            {% else %}
-            <td><a href="return_book/{{transaction.id}}" class="btn btn-Primary pull-right">Delete</a></td>
-            {% endif %}
+    <!-- Search and Filter Bar -->
+    <div class="card mb-4 border-0 shadow-sm">
+        <div class="card-body">
+            <div class="row g-2">
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                        <input type="text" class="form-control border-start-0" id="searchInput" placeholder="Search transactions...">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="statusFilter">
+                        <option selected value="all">All Transactions</option>
+                        <option value="open">Open Transactions</option>
+                        <option value="closed">Closed Transactions</option>
+                        <option value="overdue">Overdue Books</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <input type="date" class="form-control" id="dateFilter">
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-outline-primary w-100" id="resetFilters">Reset Filters</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-            <!-- Email Alert Button -->
-            <!-- <td>
-                <a class="btn btn-Primary pull-right email-alert-btn"
-                    href="send_email/{{transaction.id}}"
-                    data-borrowed-date="{{transaction.borrowed_on}}"
-                    disabled>Email Alert</a>
-            </td> -->
-            <td>
-                <a class="btn btn-Primary pull-right email-alert-btn"
-                    href="send_email/{{transaction.id}}"
-                    data-borrowed-date="{{transaction.borrowed_on}}"
-                    style="pointer-events: none; opacity: 0.5;">Email Alert</a>
-            </td>
-            
+    <!-- Transactions Table -->
+    {% if transactions %}
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-3">ID</th>
+                            <th>Book</th>
+                            <th>Member</th>
+                            <th>Fee</th>
+                            <th>Borrowed On</th>
+                            <th>Returned On</th>
+                            <th class="text-end">Charge</th>
+                            <th class="text-end">Paid</th>
+                            <th class="text-center" colspan="3">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for transaction in transactions %}
+                        <tr class="transaction-row" 
+                            data-transaction-id="{{transaction.id}}"
+                            data-book-id="{{transaction.book_id}}"
+                            data-member-id="{{transaction.member_id}}"
+                            data-borrowed-on="{{transaction.borrowed_on}}"
+                            data-status="{% if transaction.amount_paid=='-' %}open{% else %}closed{% endif %}">
+                            <td class="ps-3"><span class="badge bg-secondary">{{transaction.id}}</span></td>
+                            <td>
+                                <a href="book/{{transaction.book_id}}" class="text-decoration-none">
+                                    <span class="badge bg-dark">{{"{:05d}".format(transaction.book_id)}}</span>
+                                </a>
+                            </td>
+                            <td>
+                                <a href="member/{{transaction.member_id}}" class="text-decoration-none">
+                                    <span class="badge bg-dark">{{"{:03d}".format(transaction.member_id)}}</span>
+                                </a>
+                            </td>
+                            <td>${{transaction.per_day_fee}}/day</td>
+                            <td class="borrowed-date" data-borrowed="{{transaction.borrowed_on}}">
+                                {{transaction.borrowed_on}}
+                                <span class="overdue-badge d-none badge bg-danger ms-1">Overdue</span>
+                            </td>
+                            <td>{{transaction.returned_on}}</td>
+                            <td class="text-end">${{transaction.total_charge}}</td>
+                            <td class="text-end">
+                                {% if transaction.amount_paid=='-' %}
+                                <span class="text-danger">Unpaid</span>
+                                {% else %}
+                                <span class="text-success">${{transaction.amount_paid}}</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                {% if transaction.amount_paid=='-' %}
+                                <a href="return_book/{{transaction.id}}" class="btn btn-sm btn-outline-danger" title="Return book">
+                                    <i class="bi bi-journal-arrow-down"></i>
+                                </a>
+                                {% else %}
+                                <span class="badge bg-success rounded-pill">Returned</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <a href="{% if transaction.amount_paid==transaction.total_charge %}transaction/{{transaction.id}}{% else %}return_book/{{transaction.id}}{% endif %}" 
+                                   class="btn btn-sm btn-outline-primary" title="Delete transaction">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </td>
+                            <td class="text-center">
+                                <a class="btn btn-sm btn-outline-warning email-alert-btn"
+                                   href="send_email/{{transaction.id}}"
+                                   data-borrowed-date="{{transaction.borrowed_on}}"
+                                   style="pointer-events: none; opacity: 0.5;" title="Send email reminder">
+                                    <i class="bi bi-envelope"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    
+    {% else %}
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-5 text-center">
+            <img src="{{url_for('static', filename='empty.svg')}}" alt="No transactions" class="mb-3" style="max-width: 200px;">
+            <h3>No transactions found</h3>
+            <p class="text-muted">There are no book transactions recorded in the system.</p>
+            <a href="/issue_book" class="btn btn-primary">Issue Your First Book</a>
+        </div>
+    </div>
+    {% endif %}
 
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-{% endif %}
+    <!-- Transaction Info Modal -->
+    <div class="modal fade" id="transactionModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Transaction Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Transaction details will be populated by JavaScript -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap Icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+
+<style>
+    .transaction-row {
+        transition: background-color 0.15s ease-in-out;
+    }
+    
+    .transaction-row.overdue {
+        background-color: rgba(220, 53, 69, 0.1);
+    }
+    
+    .btn-group .btn {
+        transition: all 0.2s;
+    }
+    
+    .card {
+        border-radius: 0.5rem;
+        overflow: hidden;
+    }
+    
+    .badge {
+        font-weight: 500;
+    }
+</style>
 
 <script>
-    function checkDueDate() {
-        const emailButtons = document.querySelectorAll(".email-alert-btn");
-
-        emailButtons.forEach((button) => {
-            const borrowedDateStr = button.getAttribute("data-borrowed-date");
-
-            if (!borrowedDateStr) return;
-
-            const borrowedDate = new Date(borrowedDateStr);
+    document.addEventListener("DOMContentLoaded", function() {
+        // Function to calculate days between two dates
+        function daysBetween(date1, date2) {
+            const oneDay = 24 * 60 * 60 * 1000; // hours*minutes*seconds*milliseconds
+            const diffTime = Math.abs(date2 - date1);
+            return Math.floor(diffTime / oneDay);
+        }
+        
+        // Function to check for overdue transactions
+        function markOverdueTransactions() {
+            const rows = document.querySelectorAll('.transaction-row');
             const today = new Date();
-
-            // Calculate difference in days
-            const diffTime = today - borrowedDate;
-            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-
-            // Enable button if difference is greater than 10
-            if (diffDays > 10) {
-                button.style.pointerEvents = "auto";
-                button.style.opacity = "1";
-            }
+            
+            rows.forEach(row => {
+                // Only check open transactions
+                if (row.dataset.status === 'open') {
+                    const borrowedDateStr = row.dataset.borrowedOn;
+                    const borrowedDate = new Date(borrowedDateStr);
+                    const daysDiff = daysBetween(borrowedDate, today);
+                    
+                    // Mark as overdue if more than 10 days
+                    if (daysDiff > 10) {
+                        row.classList.add('overdue');
+                        const badge = row.querySelector('.overdue-badge');
+                        badge.classList.remove('d-none');
+                        
+                        // Enable email button
+                        const emailButton = row.querySelector('.email-alert-btn');
+                        emailButton.style.pointerEvents = 'auto';
+                        emailButton.style.opacity = '1';
+                        emailButton.title = 'Send overdue reminder';
+                    }
+                }
+            });
+        }
+        
+        // Search and filter functionality
+        const searchInput = document.getElementById('searchInput');
+        const statusFilter = document.getElementById('statusFilter');
+        const dateFilter = document.getElementById('dateFilter');
+        const resetButton = document.getElementById('resetFilters');
+        
+        function applyFilters() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const statusValue = statusFilter.value;
+            const dateValue = dateFilter.value ? new Date(dateFilter.value) : null;
+            
+            document.querySelectorAll('.transaction-row').forEach(row => {
+                let showRow = true;
+                
+                // Search filter
+                if (searchTerm) {
+                    const id = row.dataset.transactionId;
+                    const bookId = row.dataset.bookId;
+                    const memberId = row.dataset.memberId;
+                    
+                    if (!id.includes(searchTerm) && !bookId.includes(searchTerm) && !memberId.includes(searchTerm)) {
+                        showRow = false;
+                    }
+                }
+                
+                // Status filter
+                if (statusValue !== 'all') {
+                    if (statusValue === 'overdue') {
+                        if (!row.classList.contains('overdue')) {
+                            showRow = false;
+                        }
+                    } else if (row.dataset.status !== statusValue) {
+                        showRow = false;
+                    }
+                }
+                
+                // Date filter
+                if (dateValue) {
+                    const borrowedDate = new Date(row.dataset.borrowedOn);
+                    if (borrowedDate.toDateString() !== dateValue.toDateString()) {
+                        showRow = false;
+                    }
+                }
+                
+                row.style.display = showRow ? '' : 'none';
+            });
+        }
+        
+        // Event listeners for filters
+        searchInput.addEventListener('keyup', applyFilters);
+        statusFilter.addEventListener('change', applyFilters);
+        dateFilter.addEventListener('change', applyFilters);
+        
+        // Reset filters
+        resetButton.addEventListener('click', function() {
+            searchInput.value = '';
+            statusFilter.value = 'all';
+            dateFilter.value = '';
+            
+            document.querySelectorAll('.transaction-row').forEach(row => {
+                row.style.display = '';
+            });
         });
-    }
-
-    document.addEventListener("DOMContentLoaded", checkDueDate);
+        
+        // Initialize overdue marking and email buttons
+        markOverdueTransactions();
+    });
 </script>
-
-
 {% endblock %}

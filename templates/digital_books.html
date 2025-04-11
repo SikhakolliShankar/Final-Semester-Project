@@ -1,31 +1,412 @@
-{% extends 'layout.html' %}
-{% block body %}
-<br>
-<h2>E-Books Collection</h2><br>
-<a href="/add_digital_book" class="btn btn-primary">Add a New Digital Book Here</a>
-<a href="/issue_digital_book" class="btn btn-primary">Purchase Book</a>
-<a href="/digital_books_transactions" class="btn btn-primary">Purchases</a>
-<br><br>
-<table class="table table-hover table-striped">
-    <thead>
-        <tr>
-            <th>Book ID</th>
-            <th>Title</th>
-            <th>Author</th>
-            <th>Publisher</th>
-            <th>Cost</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for book in books %}
-            <tr>
-                <td>{{book.id}}</td>
-                <td>{{book.title}}</td>
-                <td>{{book.author}}</td>
-                <td>{{book.publisher}}</td>
-                <td>{{book.cost}}</td>
-            </tr>
-        {% endfor %}
-    </tbody>
-</table>
+{% extends 'layout.html' %} {% block body %}
+<div class="container py-5">
+  <!-- Hero Section -->
+  <div class="row mb-5">
+    <div class="col-12 text-center">
+      <h1 class="display-4 fw-bold text-primary">Digital Library</h1>
+      <p class="lead text-muted">
+        Discover, purchase, and explore our vast collection of digital books
+      </p>
+    </div>
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="row mb-4 justify-content-center">
+    <div class="col-md-10 d-flex flex-wrap justify-content-center gap-3">
+      <a href="/add_digital_book" class="btn btn-primary btn-lg shadow-sm">
+        <i class="fas fa-plus-circle me-2"></i>Add New Book
+      </a>
+      <a href="/issue_digital_book" class="btn btn-success btn-lg shadow-sm">
+        <i class="fas fa-shopping-cart me-2"></i>Purchase Book
+      </a>
+      <a href="/digital_books_transactions" class="btn btn-info btn-lg shadow-sm text-white">
+        <i class="fas fa-history me-2"></i>Purchase History
+      </a>
+    </div>
+  </div>
+
+  <!-- Search Bar -->
+  <div class="row mb-5">
+    <div class="col-md-8 mx-auto">
+      <div class="input-group">
+        <span class="input-group-text bg-white">
+          <i class="fas fa-search text-primary"></i>
+        </span>
+        <input type="text" id="bookSearch" class="form-control form-control-lg"
+          placeholder="Search by title, author, or publisher..." />
+      </div>
+    </div>
+  </div>
+
+  <!-- Book Collection -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card shadow border-0">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center py-3">
+          <h3 class="card-title mb-0">Available E-Books</h3>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="booksTable">
+              <thead class="table-light">
+                <tr>
+                  <th scope="col">ID</th>
+                  <th scope="col">Title</th>
+                  <th scope="col">Author</th>
+                  <th scope="col">Publisher</th>
+                  <th scope="col">Price</th>
+                </tr>
+              </thead>
+              <tbody id="booksTableBody">
+                {% for book in books %}
+                <tr class="book-row" data-page="1">
+                  <td><span class="badge bg-secondary">{{book.id}}</span></td>
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <div class="book-icon bg-light text-primary rounded p-2 me-3">
+                        <i class="fas fa-book fa-2x"></i>
+                      </div>
+                      <div>
+                        <h6 class="mb-0 fw-bold">{{book.title}}</h6>
+                      </div>
+                    </div>
+                  </td>
+                  <td><span class="text-muted">{{book.author}}</span></td>
+                  <td><span class="fw-light">{{book.publisher}}</span></td>
+                  <td>
+                    <span class="fw-bold text-success">${{book.cost}}</span>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card-footer bg-white d-flex justify-content-between align-items-center py-3">
+          <div>
+            <span class="text-muted">Showing <span id="bookCount">{{books|length}}</span> books</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Stats Section -->
+  <div class="row mt-5" style="align-items: center">
+    <div class="col-md-4 mb-4">
+      <div class="card text-center h-100 border-0 shadow-sm">
+        <div class="card-body">
+          <div class="display-4 text-primary mb-3">
+            <i class="fas fa-book-open"></i>
+          </div>
+          <h5 class="card-title">Total Books</h5>
+          <p class="card-text display-6 fw-bold">{{books|length}}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Initialize variables
+  let allBooks = [];
+  const itemsPerPage = 5; // Number of books to show per page
+  let currentPage = 1;
+  let currentSort = { field: null, order: null };
+
+  // Document ready function
+  document.addEventListener("DOMContentLoaded", function () {
+    // Get all the book rows
+    allBooks = Array.from(document.getElementsByClassName("book-row"));
+
+    // Initialize pagination
+    setupPagination();
+    showPage(1);
+
+    // Setup event listeners
+    setupEventListeners();
+  });
+
+  // Setup event listeners for the page
+  function setupEventListeners() {
+    // Search functionality
+    document
+      .getElementById("bookSearch")
+      .addEventListener("input", function () {
+        const searchTerm = this.value.toLowerCase();
+
+        // Filter books based on search term
+        allBooks.forEach((row) => {
+          const title = row.querySelector("h6").textContent.toLowerCase();
+          const author = row
+            .querySelector(".text-muted")
+            .textContent.toLowerCase();
+          const publisher = row
+            .querySelector(".fw-light")
+            .textContent.toLowerCase();
+
+          if (
+            title.includes(searchTerm) ||
+            author.includes(searchTerm) ||
+            publisher.includes(searchTerm)
+          ) {
+            row.classList.remove("d-none");
+            row.dataset.filtered = "true";
+          } else {
+            row.classList.add("d-none");
+            row.dataset.filtered = "false";
+          }
+        });
+
+        // Update count and reset pagination
+        updateBookCount();
+        setupPagination();
+        showPage(1);
+      });
+
+    // Sorting functionality
+    document.querySelectorAll(".sort-btn").forEach((button) => {
+      button.addEventListener("click", function () {
+        const sortBy = this.getAttribute("data-sort");
+        const sortOrder = this.getAttribute("data-order");
+
+        // Update dropdown button text
+        document.getElementById("sortDropdown").textContent = this.textContent;
+
+        // Update current sort state
+        currentSort = { field: sortBy, order: sortOrder };
+
+        // Perform the sorting
+        sortBooks(sortBy, sortOrder);
+
+        // Reset pagination and show first page
+        setupPagination();
+        showPage(1);
+
+        // Show notification
+        showNotification(
+          `Books sorted by ${sortBy} (${sortOrder === "asc" ? "ascending" : "descending"
+          })`
+        );
+      });
+    });
+
+    // Pagination buttons
+    document
+      .getElementById("prevPageBtn")
+      .addEventListener("click", function () {
+        if (currentPage > 1) {
+          showPage(currentPage - 1);
+        }
+      });
+
+    document
+      .getElementById("nextPageBtn")
+      .addEventListener("click", function () {
+        const totalPages = Math.ceil(getFilteredBooks().length / itemsPerPage);
+        if (currentPage < totalPages) {
+          showPage(currentPage + 1);
+        }
+      });
+
+    // Individual page buttons
+    document.querySelectorAll(".page-link[data-page]").forEach((pageLink) => {
+      pageLink.addEventListener("click", function () {
+        const pageNum = parseInt(this.getAttribute("data-page"));
+        showPage(pageNum);
+      });
+    });
+  }
+
+  // Function to sort books
+  function sortBooks(sortBy, sortOrder) {
+    allBooks.sort((a, b) => {
+      let valueA, valueB;
+
+      if (sortBy === "title") {
+        valueA = a.querySelector("h6").textContent.trim().toLowerCase();
+        valueB = b.querySelector("h6").textContent.trim().toLowerCase();
+      } else if (sortBy === "author") {
+        valueA = a
+          .querySelector(".text-muted")
+          .textContent.trim()
+          .toLowerCase();
+        valueB = b
+          .querySelector(".text-muted")
+          .textContent.trim()
+          .toLowerCase();
+      } else if (sortBy === "price") {
+        valueA = parseFloat(
+          a.querySelector(".text-success").textContent.replace("$", "").trim()
+        );
+        valueB = parseFloat(
+          b.querySelector(".text-success").textContent.replace("$", "").trim()
+        );
+      }
+
+      if (sortOrder === "asc") {
+        return valueA > valueB ? 1 : -1;
+      } else {
+        return valueA < valueB ? 1 : -1;
+      }
+    });
+
+    // Update the DOM with sorted books
+    const tableBody = document.getElementById("booksTableBody");
+
+    // Remove all existing rows
+    while (tableBody.firstChild) {
+      tableBody.removeChild(tableBody.firstChild);
+    }
+
+    // Append sorted rows back to the table
+    allBooks.forEach((row) => {
+      tableBody.appendChild(row);
+    });
+  }
+
+  // Setup pagination based on current filtered books
+  function setupPagination() {
+    const filteredBooks = getFilteredBooks();
+    const totalPages = Math.ceil(filteredBooks.length / itemsPerPage);
+
+    // Update pagination UI
+    const pagination = document.getElementById("pagination");
+
+    // Clear existing page numbers (except prev/next)
+    const pageItems = Array.from(pagination.querySelectorAll(".page-item"));
+    pageItems.forEach((item) => {
+      if (!item.id) {
+        // Skip prev/next buttons which have IDs
+        pagination.removeChild(item);
+      }
+    });
+
+    // Insert new page numbers before the "Next" button
+    const nextPageBtn = document.getElementById("nextPageBtn");
+    for (let i = 1; i <= totalPages; i++) {
+      const pageItem = document.createElement("li");
+      pageItem.className = "page-item" + (i === currentPage ? " active" : "");
+
+      const pageLink = document.createElement("button");
+      pageLink.className = "page-link";
+      pageLink.textContent = i;
+      pageLink.setAttribute("data-page", i);
+
+      pageLink.addEventListener("click", function () {
+        showPage(i);
+      });
+
+      pageItem.appendChild(pageLink);
+      pagination.insertBefore(pageItem, nextPageBtn);
+    }
+
+    // Update prev/next buttons state
+    document
+      .getElementById("prevPageBtn")
+      .classList.toggle("disabled", currentPage === 1);
+    document
+      .getElementById("nextPageBtn")
+      .classList.toggle(
+        "disabled",
+        currentPage === totalPages || totalPages === 0
+      );
+
+    // If there are no pages, add a disabled "1" page
+    if (totalPages === 0) {
+      const pageItem = document.createElement("li");
+      pageItem.className = "page-item active";
+
+      const pageLink = document.createElement("button");
+      pageLink.className = "page-link";
+      pageLink.textContent = "1";
+      pageLink.setAttribute("data-page", "1");
+
+      pageItem.appendChild(pageLink);
+      pagination.insertBefore(pageItem, nextPageBtn);
+    }
+  }
+
+  // Show specific page
+  function showPage(pageNum) {
+    currentPage = pageNum;
+    const filteredBooks = getFilteredBooks();
+
+    // Calculate start and end index
+    const startIndex = (pageNum - 1) * itemsPerPage;
+    const endIndex = Math.min(startIndex + itemsPerPage, filteredBooks.length);
+
+    // Hide all books first
+    allBooks.forEach((book) => {
+      book.classList.add("d-none");
+    });
+
+    // Show only books for the current page
+    for (let i = startIndex; i < endIndex; i++) {
+      filteredBooks[i].classList.remove("d-none");
+    }
+
+    // Update active page in pagination
+    document.querySelectorAll(".pagination .page-item").forEach((item) => {
+      item.classList.remove("active");
+      const pageLink = item.querySelector(".page-link[data-page]");
+      if (
+        pageLink &&
+        parseInt(pageLink.getAttribute("data-page")) === pageNum
+      ) {
+        item.classList.add("active");
+      }
+    });
+
+    // Update prev/next buttons state
+    const totalPages = Math.ceil(filteredBooks.length / itemsPerPage);
+    document
+      .getElementById("prevPageBtn")
+      .classList.toggle("disabled", pageNum === 1);
+    document
+      .getElementById("nextPageBtn")
+      .classList.toggle("disabled", pageNum === totalPages);
+  }
+
+  // Get books that pass the current filter
+  function getFilteredBooks() {
+    return allBooks.filter((book) => {
+      return book.dataset.filtered !== "false";
+    });
+  }
+
+  // Update the book count display
+  function updateBookCount() {
+    const visibleCount = getFilteredBooks().length;
+    document.getElementById("bookCount").textContent = visibleCount;
+  }
+
+  // Function to show temporary notification
+  function showNotification(message) {
+    // Create notification element
+    const notification = document.createElement("div");
+    notification.className = "position-fixed bottom-0 end-0 p-3";
+    notification.style.zIndex = "5";
+
+    notification.innerHTML = `
+            <div class="toast show" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="toast-header">
+                    <strong class="me-auto">Notification</strong>
+                    <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+                <div class="toast-body">
+                    ${message}
+                </div>
+            </div>
+        `;
+
+    // Add to document
+    document.body.appendChild(notification);
+
+    // Remove after 3 seconds
+    setTimeout(() => {
+      document.body.removeChild(notification);
+    }, 3000);
+  }
+</script>
 {% endblock %}

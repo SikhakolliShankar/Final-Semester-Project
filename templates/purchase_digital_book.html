@@ -1,15 +1,42 @@
 {% extends 'layout.html' %}
 {% block body %}
-<br>
-<h1>Issue Book to Member</h1>
-{% from "includes/_formhelpers.html" import render_field %}
-<form method="POST" action="">
-    <div class="form-group">
-        {{render_field(form.book_id, class_="form-control")}}
-    </div><br>
-    <div class="form-group">
-        {{render_field(form.member_id, class_="form-control")}}
-    </div><br>
-    <p><button type="submit" class="btn btn-primary" value="Submit">Submit</button></p>
-</form>
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-6 col-md-8 col-sm-12">
+      <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+          <h2 class="h3 mb-0">Issue Book to Member</h2>
+        </div>
+        <div class="card-body">
+          {% from "includes/_formhelpers.html" import render_field %}
+          <form method="POST" action="" class="needs-validation" novalidate>
+            <div class="form-group mb-4">
+              <!-- <label for="book_id" class="form-label fw-bold">Book ID</label> -->
+              {{ render_field(form.book_id, class_="form-control form-control-lg", placeholder="Enter Book ID") }}
+              <small class="text-muted">Enter the unique identifier of the book</small>
+            </div>
+            
+            <div class="form-group mb-4">
+              <!-- <label for="member_id" class="form-label fw-bold">Member ID</label> -->
+              {{ render_field(form.member_id, class_="form-control form-control-lg", placeholder="Enter Member ID") }}
+              <small class="text-muted">Enter the unique identifier of the member</small>
+            </div>
+            
+            <div class="d-grid gap-2 mt-4">
+              <button type="submit" class="btn btn-primary btn-lg" value="Submit">
+                <i class="fas fa-exchange-alt me-2"></i>Issue Book
+              </button>
+            </div>
+          </form>
+        </div>
+        <div class="card-footer bg-light">
+          <div class="d-flex justify-content-between align-items-center">
+            <small class="text-muted">Please ensure both IDs are correct</small>
+            <a href="/digital_books_transactions" class="btn btn-sm btn-outline-secondary">View Issue History</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}

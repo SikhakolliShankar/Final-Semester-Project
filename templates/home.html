@@ -1,23 +1,111 @@
 {% extends 'layout.html' %}
 {% block body %}
-<div class="px-4 py-5 my-5 text-center">
-    <h1 class="display-5 fw-bold">Library Management System</h1>
-    <div class="col-lg-6 mx-auto">
-        <!-- <p class="lead mb-4">A Library Management Web Application built in fulfilment of the <a
-                href="https://frappe.io/dev-hiring-test" style="text-decoration: none; color: unset;">Developer Hiring
-                Test for Frappe. Allows a librarian to track books and their quantity, members, and transactions.</a>
-        </p> -->
-        <p class="lead mb-4">
-            <img src="{{url_for('static', filename='library.jpg')}}" alt="">
-        </p>
-        <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
-            <a href="/reports" class="btn btn-primary btn-lg px-4">Reports</a>
-            <a href="/books" class="btn btn-outline-secondary btn-lg px-4">Books</a>
-            <a href="/members" class="btn btn-outline-secondary btn-lg px-4">Members</a>
-            <a href="/transactions" class="btn btn-outline-secondary btn-lg px-4">Transactions</a>
-            <a href="/digitalbooks" class="btn btn-outline-secondary btn-lg px-4">Digital Books</a>
-
+<div class="container-fluid">
+    <!-- Hero Section with Gradient Background -->
+    <div class="px-4 py-5 my-3 text-center rounded shadow" style="background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);">
+        <h1 class="display-4 fw-bold text-white mb-3">Welcome to Our Digital Library Hub</h1>
+        <div class="col-lg-7 mx-auto">
+            <p class="lead text-white mb-4">Discover, organize, and explore collection with our comprehensive Library Management System</p>
+        </div>
+    </div>
+    
+    <!-- Stats Cards -->
+    <div class="row mt-4 mb-5 g-4 text-center">
+        <div class="col-md-3">
+            <div class="card h-100 border-0 shadow-sm hover-shadow">
+                <div class="card-body">
+                    <i class="bi bi-book text-primary" style="font-size: 2rem;"></i>
+                    <h5 class="card-title mt-3">Extensive Collection</h5>
+                    <p class="card-text text-muted">Browse thousands of books across multiple genres</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <i class="bi bi-people text-success" style="font-size: 2rem;"></i>
+                    <h5 class="card-title mt-3">Member Management</h5>
+                    <p class="card-text text-muted">Keep track of your members and their borrowing activity</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <i class="bi bi-graph-up text-danger" style="font-size: 2rem;"></i>
+                    <h5 class="card-title mt-3">Insightful Reports</h5>
+                    <p class="card-text text-muted">Access detailed analytics about your library usage</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <i class="bi bi-laptop text-info" style="font-size: 2rem;"></i>
+                    <h5 class="card-title mt-3">Digital Resources</h5>
+                    <p class="card-text text-muted">Access e-books and digital materials with ease</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Image and Navigation Section -->
+    <div class="row align-items-center mb-5">
+        <div class="col-lg-6 mb-4 mb-lg-0">
+            <div class="position-relative">
+                <img src="{{url_for('static', filename='library.jpg')}}" alt="Library" class="img-fluid rounded shadow-lg">
+                <div class="position-absolute top-0 start-0 w-100 h-100 bg-dark opacity-25 rounded"></div>
+                <div class="position-absolute top-50 start-50 translate-middle text-center text-white">
+                    <h3 class="fw-bold">Empowering Knowledge</h3>
+                    <p>Connecting readers with resources since 2023</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <h2 class="mb-4 fw-bold">Quick Navigation</h2>
+            <div class="d-grid gap-3">
+                <a href="/reports" class="btn btn-primary btn-lg d-flex align-items-center justify-content-between">
+                    <span>View Reports</span>
+                    <i class="bi bi-arrow-right"></i>
+                </a>
+                <a href="/books" class="btn btn-outline-secondary btn-lg d-flex align-items-center justify-content-between">
+                    <span>Manage Books</span>
+                    <i class="bi bi-arrow-right"></i>
+                </a>
+                <a href="/members" class="btn btn-outline-secondary btn-lg d-flex align-items-center justify-content-between">
+                    <span>Member Directory</span>
+                    <i class="bi bi-arrow-right"></i>
+                </a>
+                <a href="/transactions" class="btn btn-outline-secondary btn-lg d-flex align-items-center justify-content-between">
+                    <span>Transaction History</span>
+                    <i class="bi bi-arrow-right"></i>
+                </a>
+                <a href="/digitalbooks" class="btn btn-outline-secondary btn-lg d-flex align-items-center justify-content-between">
+                    <span>Digital Collection</span>
+                    <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
         </div>
     </div>
 </div>
+
+<!-- Add Bootstrap Icons for the icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+
+<!-- Add some custom styles -->
+<style>
+    .hover-shadow:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important;
+        transition: all 0.3s ease;
+    }
+    
+    .btn {
+        transition: all 0.3s ease;
+    }
+    
+    .btn:hover {
+        transform: translateX(5px);
+    }
+</style>
 {% endblock %}

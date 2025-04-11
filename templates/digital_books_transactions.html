@@ -1,35 +1,120 @@
 {% extends 'layout.html' %}
 {% block body %}
-<br>
-<h1>Purchases</h1>
-<hr>
-{% if purchases %}
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Member ID</th>
-            <th>Book ID</th>
-            <th>Purchase Date</th>
-            <th>Amount Paid</th>
-            <th>Expires At</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for purchase in purchases %}
-        <tr>
-            <td>{{purchase.id}}</td>
+<div class="container py-4">
+  <div class="row mb-4">
+    <div class="col-12 text-center">
+      <h1 class="display-4 text-primary mb-3">📚 Library Purchases</h1>
+      <div class="bg-light p-2 rounded-pill d-inline-block px-4 mb-2">
+        <span class="text-muted">Track your library's acquisitions</span>
+      </div>
+    </div>
+  </div>
+
+  {% if purchases %}
+  <div class="card shadow border-0 rounded-lg overflow-hidden">
+    <div class="card-header bg-primary text-white p-3">
+      <div class="row align-items-center">
+        <div class="col">
+          <h5 class="mb-0">Purchase Records</h5>
+        </div>
+        <div class="col-auto">
+          <div class="bg-white bg-opacity-25 px-3 py-1 rounded-pill">
+            <small>{{ purchases|length }} Records Found</small>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th class="fw-bold text-primary">ID</th>
+            <th class="fw-bold text-primary">Member</th>
+            <th class="fw-bold text-primary">Book Title</th>
+            <th class="fw-bold text-primary">Purchase Date</th>
+            <th class="fw-bold text-primary">Amount</th>
+            <th class="fw-bold text-primary">Expires At</th>
+            <th class="fw-bold text-primary">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for purchase in purchases %}
+          <tr class="align-middle">
             <td>
-                <a href="member/{{purchase.member_name}}"
-                    class="btn btn-dark pull-right">{{"{:03d}".format(purchase.member_name)}}</a>
+              <span class="badge bg-secondary rounded-pill">{{ purchase.id }}</span>
             </td>
-            <td>{{purchase.book_title}}</td>
-            <td>{{purchase.purchase_date}}</td>
-            <td>{{purchase.total_cost}}</td>
-            <td>{{purchase.expires_at}}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-{% endif %}
+            <td>
+              <a href="member/{{purchase.member_name}}" class="btn btn-sm btn-outline-primary">
+                Member #{{ "{:03d}".format(purchase.member_name) }}
+              </a>
+            </td>
+            <td>
+              <div class="d-flex align-items-center">
+                <div class="book-icon bg-light p-2 rounded me-2">
+                  <i class="fas fa-book text-primary"></i>
+                </div>
+                <span>{{ purchase.book_title }}</span>
+              </div>
+            </td>
+            <td>
+              <div class="d-flex align-items-center">
+                <div class="calendar-icon bg-light p-2 rounded me-2">
+                  <i class="fas fa-calendar-alt text-secondary"></i>
+                </div>
+                <span>{{ purchase.purchase_date }}</span>
+              </div>
+            </td>
+            <td>
+              <span class="fw-bold text-success">${{ purchase.total_cost }}</span>
+            </td>
+            <td>
+              {% set expires_soon = purchase.expires_at|string|lower is defined and 'day' in purchase.expires_at|string|lower %}
+              <span class="badge rounded-pill {% if expires_soon %}bg-warning{% else %}bg-info{% endif %} p-2">
+                {{ purchase.expires_at }}
+              </span>
+            </td>
+            <td>
+              {% set is_expired = purchase.expires_at < now %}
+              <span class="badge rounded-pill {% if is_expired %}bg-danger{% else %}bg-success{% endif %} p-2">
+                {% if is_expired %}
+                  Expired
+                {% else %}
+                  Active
+                {% endif %}
+              </span>
+            </td>            
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    
+    <div class="card-footer bg-light p-3">
+      <div class="row align-items-center">
+        <div class="col">
+          <small class="text-muted">Updated: Today</small>
+        </div>
+        <div class="col-auto">
+          <button class="btn btn-sm btn-outline-secondary">
+            <i class="fas fa-download me-1"></i> Export
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="card border-0 shadow-sm">
+    <div class="card-body text-center py-5">
+      <img src="/api/placeholder/200/200" alt="No purchases" class="mb-3">
+      <h3 class="text-muted">No Purchases Found</h3>
+      <p class="text-muted">There are no purchase records available at this time.</p>
+      <button class="btn btn-primary">Add a Purchase</button>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Add this if not already in your layout file -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 {% endblock %}

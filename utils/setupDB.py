@@ -30,7 +30,7 @@ def executeScriptsFromFile(filename):
 
 # Setup main database
 # Setup database for unit testing
-executeScriptsFromFile('LibraryDB.sql')
-executeScriptsFromFile('LibraryTestDB.sql')
-# executeScriptsFromFile('a.sql')
+# executeScriptsFromFile('LibraryDB.sql')
+# executeScriptsFromFile('LibraryTestDB.sql')
+executeScriptsFromFile('a.sql')
 # 
