@@ -5,11 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Login</title>
     <style>
+        :root {
+            --primary-color: #4a90e2;
+            --primary-hover: #3a7bc8;
+            --text-color: #333;
+            --background-color: #f5f5f5;
+            --card-background: white;
+            --border-color: #ddd;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --focus-shadow: rgba(74, 144, 226, 0.2);
+            --error-color: #e74c3c;
+            --success-color: #2ecc71;
+        }
+
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         
         body {
@@ -17,23 +30,57 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            background-color: #f5f5f5;
+            background-color: var(--background-color);
             padding: 20px;
+            color: var(--text-color);
         }
         
         .login-container {
-            background-color: white;
+            background-color: var(--card-background);
             border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 16px var(--shadow-color);
             padding: 30px;
             width: 100%;
             max-width: 400px;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .login-container:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
         }
         
         h2 {
             text-align: center;
             margin-bottom: 24px;
-            color: #333;
+            color: var(--text-color);
+            font-weight: 600;
+        }
+        
+        .tabs {
+            display: flex;
+            margin-bottom: 24px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .tab-link {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            color: var(--text-color);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s;
+            border-bottom: 2px solid transparent;
+        }
+        
+        .tab-link.active {
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--primary-color);
+        }
+        
+        .tab-link:hover {
+            color: var(--primary-color);
         }
         
         .form-group {
@@ -49,41 +96,129 @@
         input {
             width: 100%;
             padding: 12px;
-            border: 1px solid #ddd;
+            border: 1px solid var(--border-color);
             border-radius: 4px;
             font-size: 16px;
-            transition: border-color 0.3s;
+            transition: all 0.3s;
         }
         
         input:focus {
             outline: none;
-            border-color: #4a90e2;
-            box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px var(--focus-shadow);
         }
         
         button {
             width: 100%;
             padding: 12px;
-            background-color: #4a90e2;
+            background-color: var(--primary-color);
             color: white;
             border: none;
             border-radius: 4px;
             font-size: 16px;
+            font-weight: 500;
             cursor: pointer;
-            transition: background-color 0.3s;
+            transition: all 0.3s;
         }
         
         button:hover {
-            background-color: #3a7bc8;
+            background-color: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .alert {
+            padding: 12px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            font-size: 14px;
+            display: block;
+        }
+        
+        .alert-danger {
+            background-color: rgba(231, 76, 60, 0.1);
+            color: var(--error-color);
+            border: 1px solid rgba(231, 76, 60, 0.3);
+        }
+        
+        .alert-success {
+            background-color: rgba(46, 204, 113, 0.1);
+            color: var(--success-color);
+            border: 1px solid rgba(46, 204, 113, 0.3);
+        }
+        
+        .alert-warning {
+            background-color: rgba(241, 196, 15, 0.1);
+            color: #f39c12;
+            border: 1px solid rgba(241, 196, 15, 0.3);
+        }
+        
+        .alert-info {
+            background-color: rgba(52, 152, 219, 0.1);
+            color: var(--primary-color);
+            border: 1px solid rgba(52, 152, 219, 0.3);
+        }
+        
+        .forgot-password {
+            display: block;
+            text-align: right;
+            margin-top: 16px;
+            color: var(--primary-color);
+            text-decoration: none;
+            font-size: 14px;
+        }
+        
+        .forgot-password:hover {
+            text-decoration: underline;
         }
         
         @media (max-width: 480px) {
             .login-container {
                 padding: 20px;
+                margin: 0 10px;
             }
             
             input, button {
                 padding: 10px;
+                font-size: 15px;
+            }
+            
+            h2 {
+                font-size: 20px;
+            }
+            
+            .tab-link {
+                padding: 10px 5px;
+                font-size: 14px;
+            }
+        }
+        
+        @media (max-width: 320px) {
+            .login-container {
+                padding: 15px;
+            }
+            
+            h2 {
+                font-size: 18px;
+                margin-bottom: 16px;
+            }
+            
+            .form-group {
+                margin-bottom: 15px;
+            }
+            
+            label {
+                font-size: 14px;
+                margin-bottom: 6px;
+            }
+            
+            input, button {
+                padding: 8px;
+                font-size: 14px;
             }
         }
     </style>
@@ -91,17 +226,32 @@
 <body>
     <div class="login-container">
         <h2>Admin Login</h2>
+        
+        <div class="tabs">
+            <a href="{{ url_for('login') }}" class="tab-link active">Admin</a>
+            <a href="{{ url_for('member_login') }}" class="tab-link">Member</a>
+        </div>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+        
         <form method="POST" action="{{ url_for('login') }}">
             <div class="form-group">
                 <label for="username">Username:</label>
-                <input type="text" id="username" name="username" required>
+                <input type="text" id="username" name="username" required autocomplete="username">
             </div>
             <div class="form-group">
                 <label for="password">Password:</label>
-                <input type="password" id="password" name="password" required>
+                <input type="password" id="password" name="password" required autocomplete="current-password">
             </div>
             <button type="submit">Login</button>
         </form>
+        
     </div>
 </body>
 </html>

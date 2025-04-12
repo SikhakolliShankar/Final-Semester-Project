@@ -95,7 +95,7 @@
                                 {% endif %}
                             </td>
                             <td class="text-center">
-                                {% if transaction.amount_paid=='-' %}
+                                {% if transaction.amount_paid=='-' or transaction.amount_paid!=transaction.total_charge %}
                                 <a href="return_book/{{transaction.id}}" class="btn btn-sm btn-outline-danger" title="Return book">
                                     <i class="bi bi-journal-arrow-down"></i>
                                 </a>

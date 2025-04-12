@@ -14,57 +14,86 @@
               <div class="col-md-6">
                 <div class="detail-item">
                   <span class="text-muted">Per Day Fee:</span>
-                  <h5 class="mb-0">{{transaction['per_day_fee']}}</h5>
+                  <h5 class="mb-0">₹ {{ transaction['per_day_fee'] }}</h5>
                 </div>
               </div>
-              
+
               <div class="col-md-6">
                 <div class="detail-item">
                   <span class="text-muted">Borrowed On:</span>
-                  <h5 class="mb-0">{{transaction['borrowed_on']}}</h5>
+                  <h5 class="mb-0">{{ transaction['borrowed_on'] }}</h5>
                 </div>
               </div>
-              
+
+              {% if not is_returned %}
               <div class="col-md-6">
                 <div class="detail-item">
-                  <span class="text-muted">Rented for:</span>
-                  <h5 class="mb-0">{{difference}} days</h5>
+                  <span class="text-muted">Book Kept For:</span>
+                  <h5 class="mb-0">{{ difference }} days</h5>
                 </div>
               </div>
-              
+              {% else %}
               <div class="col-md-6">
                 <div class="detail-item">
-                  <span class="text-muted">Amount Due:</span>
-                  <h5 class="mb-0 fw-bold text-primary">{{total_charge}}</h5>
+                  <span class="text-muted">Returned On:</span>
+                  <h5 class="mb-0">{{ transaction['returned_on'] }}</h5>
+                </div>
+              </div>
+              {% endif %}
+
+              <div class="col-md-6">
+                <div class="detail-item">
+                  <span class="text-muted">Total Charge:</span>
+                  <h5 class="mb-0 text-dark fw-bold">₹ {{ total_charge }}</h5>
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <div class="detail-item">
+                  <span class="text-muted">Amount Already Paid:</span>
+                  <h5 class="mb-0 text-success">₹ {{ previous_payment }}</h5>
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <div class="detail-item">
+                  <span class="text-muted">Amount Due Now:</span>
+                  <h5 class="mb-0 text-danger fw-bold">₹ {{ remaining_debt }}</h5>
                 </div>
               </div>
             </div>
           </div>
-          
+
           <hr class="my-4">
-          
+
           {% from "includes/_formhelpers.html" import render_field %}
           <form method="POST" action="" class="needs-validation" novalidate>
             <div class="form-group mb-4">
-              <!-- <label for="amount_paid" class="form-label fw-bold">Amount Paid</label> -->
               {{ render_field(form.amount_paid, class_="form-control form-control-lg", placeholder="Enter amount paid") }}
-              <small class="text-muted">Please enter the exact amount paid by member</small>
+              <small class="text-muted">Please enter the amount paid by the member now</small>
             </div>
             
             <div class="d-grid gap-2 mt-4">
               <button type="submit" class="btn btn-primary btn-lg" value="Submit">
-                <i class="fas fa-check-circle me-2"></i>Complete Return
+                <i class="fas fa-check-circle me-2"></i>{% if is_returned %}Update Payment{% else %}Complete Return{% endif %}
               </button>
             </div>
           </form>
         </div>
-        
+
         <div class="card-footer bg-light">
           <div class="d-flex justify-content-between align-items-center">
-            <small class="text-muted">Book will be returned to inventory after payment</small>
-            <a href="/transactions" class="btn btn-sm btn-outline-secondary">Payment History</a>
+            <small class="text-muted">
+              {% if is_returned %}
+                Transaction already marked as returned. You can record remaining payments here.
+              {% else %}
+                Book will be returned to inventory after this transaction.
+              {% endif %}
+            </small>
+            <a href="{{ url_for('transactions') }}" class="btn btn-sm btn-outline-secondary">Payment History</a>
           </div>
         </div>
+
       </div>
     </div>
   </div>

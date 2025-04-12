@@ -879,174 +879,147 @@ class IssueBook(Form):
 # Issue Book
 @app.route('/issue_book', methods=['GET', 'POST'])
 def issue_book():
-    # Get form data from request
     form = IssueBook(request.form)
-
-    # Create MySQLCursor
-    # cur = mysql.connection.cursor()
     connection = get_db_connection()
     cur = connection.cursor()
 
-
-    # Create choices list for SelectField in form
-    # https://wtforms.readthedocs.io/en/2.3.x/fields/#wtforms.fields.SelectField
     cur.execute("SELECT id, title FROM books")
     books = cur.fetchall()
-    book_ids_list = []
-    for book in books:
-        t = (book['id'], book['title'])
-        book_ids_list.append(t)
+    book_ids_list = [(book['id'], book['title']) for book in books]
 
     cur.execute("SELECT id, name FROM members")
     members = cur.fetchall()
-    member_ids_list = []
-    for member in members:
-        t = (member['id'], member['name'])
-        member_ids_list.append(t)
+    member_ids_list = [(member['id'], member['name']) for member in members]
 
     form.book_id.choices = book_ids_list
     form.member_id.choices = member_ids_list
 
-    # To handle POST request to route
     if request.method == 'POST' and form.validate():
-
-        # Get the no of books available to be rented
-        cur.execute("SELECT available_quantity FROM books WHERE id=%s", [
-                    form.book_id.data])
+        cur.execute("SELECT available_quantity FROM books WHERE id=%s", [form.book_id.data])
         result = cur.fetchone()
         available_quantity = result['available_quantity']
 
-        # Check if book is available to be rented/issued
-        if(available_quantity < 1):
-            error = 'No copies of this book are availabe to be rented'
+        if available_quantity < 1:
+            error = 'No copies of this book are available to be rented'
             return render_template('issue_book.html', form=form, error=error)
 
-        # Execute SQL Query to create transaction
-        cur.execute("INSERT INTO transactions (book_id,member_id,per_day_fee,total_charge) VALUES (%s, %s, %s, %s)", [
-            form.book_id.data,
-            form.member_id.data,
-            form.per_day_fee.data,
-            form.per_day_fee.data,
-            # datetime.now().date()
-        ])
-        # cur.execute("INSERT INTO transactions (book_id,member_id,per_day_fee) VALUES (%s, %s, %s)", [
-        #     form.book_id.data,
-        #     form.member_id.data,
-        #     form.per_day_fee.data,
-        # ])
+        total_charge = form.per_day_fee.data  # initial expected charge (1 day at least)
 
-        # Update available quantity, rented count of book
-        cur.execute(
-            "UPDATE books SET available_quantity=available_quantity-1, rented_count=rented_count+1 WHERE id=%s", [form.book_id.data])
+        cur.execute("""
+            INSERT INTO transactions (book_id, member_id, per_day_fee, total_charge, amount_paid)
+            VALUES (%s, %s, %s, %s, %s)
+        """, [form.book_id.data, form.member_id.data, form.per_day_fee.data, total_charge, 0.0])
 
+        cur.execute("""
+            UPDATE books SET available_quantity = available_quantity - 1,
+                             rented_count = rented_count + 1
+            WHERE id=%s
+        """, [form.book_id.data])
 
+        # Update member's debt immediately
+        cur.execute("SELECT outstanding_debt FROM members WHERE id=%s", [form.member_id.data])
+        existing_debt = float(cur.fetchone()['outstanding_debt'])
+        updated_debt = existing_debt + total_charge
 
-        # # Update members outstanding_debt
-        # cur.execute(
-        #     "UPDATE members SET outstanding_debt=%s WHERE id=%s", [form.per_day_fee.data,form.member_id.data]
-        # )
+        cur.execute("""
+            UPDATE members SET outstanding_debt = %s WHERE id = %s
+        """, [updated_debt, form.member_id.data])
 
-
-
-
-        # Commit to DB
         connection.commit()
-
-        # Close DB Connection
         cur.close()
 
-        # Flash Success Message
         flash("Book Issued", "success")
-
-        # Redirect to show all transactions
         return redirect(url_for('transactions'))
 
-    # To handle GET request to route
     return render_template('issue_book.html', form=form)
 
-
-# Define Issue-Book-Form
 class ReturnBook(Form):
     amount_paid = FloatField('Amount Paid', [validators.NumberRange(min=0)])
 
-
-# Return Book by Transaction ID
+# Define Issue-Book-Form
 @app.route('/return_book/<string:transaction_id>', methods=['GET', 'POST'])
 def return_book(transaction_id):
-    # Get form data from request
     form = ReturnBook(request.form)
-
-    # Create MySQLCursor
-    # cur = mysql.connection.cursor()
     connection = get_db_connection()
     cur = connection.cursor()
 
-    # To get existing values of selected transaction
     cur.execute("SELECT * FROM transactions WHERE id=%s", [transaction_id])
     transaction = cur.fetchone()
 
-    # Calculate Total Charge
-    # date = datetime.now().date()
-    date = datetime.now()
-
-    # print(datetime.now().date())
-    # difference = date - transaction['borrowed_on'].date()
-    difference = date - transaction['borrowed_on']
-    # print(transaction["borrowed_on"].date())
-    # difference = difference.days
-    difference = difference.days+1
-    total_charge = difference * transaction['per_day_fee']
-
-    # To handle POST request to route
-    if request.method == 'POST' and form.validate():
-
-        # Calculate debt for this transaction based on amount_paid
-        transaction_debt = total_charge - form.amount_paid.data
-
-        # Check if outstanding_debt + transaction_debt exceeds Rs.500
-        cur.execute("SELECT outstanding_debt,amount_spent FROM members WHERE id=%s", [
-                    transaction['member_id']])
-        result = cur.fetchone()
-        outstanding_debt = result['outstanding_debt']
-        amount_spent = result['amount_spent']
-        if(outstanding_debt + transaction_debt > 500):
-            error = 'Outstanding Debt Cannot Exceed Rs.500'
-            return render_template('return_book.html', form=form, error=error)
-
-        # Update returned_on, total_charge, amount_paid for this transaction
-        cur.execute("UPDATE transactions SET returned_on=%s,total_charge=%s,amount_paid=%s WHERE id=%s", [
-            date,
-            total_charge,
-            form.amount_paid.data,
-            transaction_id
-        ])
-
-        # Update outstanding_debt and amount_spent for this member
-        cur.execute("UPDATE members SET outstanding_debt=%s, amount_spent=%s WHERE id=%s", [
-            outstanding_debt+transaction_debt,
-            amount_spent+form.amount_paid.data,
-            transaction['member_id']
-        ])
-
-        # Update available_quantity for this book
-        cur.execute(
-            "UPDATE books SET available_quantity=available_quantity+1 WHERE id=%s", [transaction['book_id']])
-
-        # Commit to DB
-        connection.commit()
-
-        # Close DB Connection
-        cur.close()
-
-        # Flash Success Message
-        flash("Book Returned", "success")
-
-        # Redirect to show all transactions
+    if not transaction:
+        flash("Transaction not found", "danger")
         return redirect(url_for('transactions'))
 
-    # To handle GET request to route
-    return render_template('return_book.html', form=form, total_charge=total_charge, difference=difference, transaction=transaction)
+    is_returned = transaction['returned_on'] is not None
+    total_charge = transaction['total_charge']
+    previous_payment = float(transaction['amount_paid'] or 0)
+    remaining_due = total_charge - previous_payment
+    date = datetime.now()
+    difference = date - transaction['borrowed_on']
 
+    if not is_returned:
+        date = datetime.now()
+        difference = date - transaction['borrowed_on']
+        borrowed_days = difference.days+1
+        # borrowed_days = (datetime.now().date() - transaction['borrowed_on']).days + 1
+        total_charge = borrowed_days * transaction['per_day_fee']
+        remaining_due = total_charge  # Full amount since nothing paid yet
+
+    if request.method == 'POST' and form.validate():
+        amount_paid = form.amount_paid.data
+
+        cur.execute("SELECT outstanding_debt, amount_spent FROM members WHERE id=%s", [transaction['member_id']])
+        member = cur.fetchone()
+        current_debt = float(member['outstanding_debt'])
+        current_spent = float(member['amount_spent'])
+
+        if is_returned:
+            # Existing return: only process new payment
+            new_paid = previous_payment + amount_paid
+            cur.execute("UPDATE transactions SET amount_paid=%s WHERE id=%s", [new_paid, transaction_id])
+
+            new_debt = max(0, current_debt - amount_paid)
+            cur.execute("UPDATE members SET outstanding_debt=%s, amount_spent=%s WHERE id=%s", [
+                new_debt, current_spent + amount_paid, transaction['member_id']
+            ])
+        else:
+            # First time return: finalize transaction
+            transaction_debt = max(0, total_charge - amount_paid)
+
+            if current_debt - previous_payment + transaction_debt > 500:
+                error = 'Outstanding Debt Cannot Exceed Rs.500'
+                return render_template('return_book.html', form=form, error=error,
+                                       payment_to_be_done=total_charge, difference=borrowed_days,
+                                       transaction=transaction)
+
+            cur.execute("""
+                UPDATE transactions SET returned_on=%s, total_charge=%s, amount_paid=%s WHERE id=%s
+            """, [datetime.now(), total_charge, amount_paid, transaction_id])
+
+            new_debt = current_debt - previous_payment + transaction_debt
+            cur.execute("""
+                UPDATE members SET outstanding_debt=%s, amount_spent=%s WHERE id=%s
+            """, [new_debt, current_spent + amount_paid, transaction['member_id']])
+
+            # Return the book
+            cur.execute("""
+                UPDATE books SET available_quantity = available_quantity + 1 WHERE id = %s
+            """, [transaction['book_id']])
+
+        connection.commit()
+        cur.close()
+
+        flash("Payment Recorded" if is_returned else "Book Returned", "success")
+        return redirect(url_for('transactions'))
+
+    # GET request handling
+    return render_template('return_book.html', form=form,
+                           difference=difference.days+1,
+                           total_charge=total_charge,
+                           previous_payment=previous_payment,
+                           remaining_debt=remaining_due,
+                           transaction=transaction,
+                           is_returned=is_returned)
 
 
 @app.route('/transaction/<string:transaction_id>')
@@ -1058,7 +1031,7 @@ def delete_transaction(transaction_id):
 
     # get the transaction record and delete the record
     cur.execute('DELETE FROM transactions where id=%s', [transaction_id])
-    
+
     # Commit to DB
     connection.commit()
 
@@ -1069,8 +1042,6 @@ def delete_transaction(transaction_id):
     flash("Book Returned", "success")
     return redirect(url_for('transactions'))
     # return render_template('transactions.html')
-
-
 
 
 
@@ -1474,6 +1445,97 @@ def view_digital_book(token):
     # Securely serve file
     else:
         return "Invalid or expired access link", 403
+
+
+# from flask import Flask, render_template, request, redirect, url_for, session, flash
+# from functools import wraps
+# import pymysql
+
+# Member Login Route
+
+@app.route('/member_login', methods=['GET', 'POST'])
+def member_login():
+    if request.method == 'POST':
+        email = request.form['email']
+        connection = get_db_connection()
+        cur = connection.cursor()
+        cur.execute("SELECT * FROM members WHERE email = %s", (email,))
+        member = cur.fetchone()
+        cur.close()
+        connection.close()
+
+        if member:
+            session['member_id'] = member['id']
+            session['member_name'] = member['name']
+            flash("Logged in successfully", "success")
+            return redirect(url_for('member_dashboard'))
+        else:
+            flash("Email not found. Please try again.", "danger")
+            return redirect(url_for('member_login'))
+    return render_template('member_login.html')
+def member_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get('member_id'):
+            flash("You need to log in as a member to access this page", "danger")
+            return redirect(url_for('member_login'))
+        return f(*args, **kwargs)
+    return decorated_function
+@app.route('/member/dashboard')
+@member_required
+def member_dashboard():
+    connection = get_db_connection()
+    cur = connection.cursor()
+
+    cur.execute("SELECT * FROM members WHERE id = %s", (session['member_id'],))
+    member_info = cur.fetchone()
+
+    cur.execute("SELECT t.*, b.title FROM transactions t JOIN books b ON t.book_id = b.id WHERE t.member_id = %s", (session['member_id'],))
+    transactions = cur.fetchall()
+
+    # Fetch physical books (available)
+    cur.execute("SELECT * FROM books WHERE available_quantity > 0")
+    books = cur.fetchall()
+
+    # Fetch digital books
+    cur.execute("SELECT * FROM digitalbooks")
+    digitalbooks = cur.fetchall()
+
+    
+    cur.close()
+    connection.close()
+
+    return render_template("member_dashboard.html", member=member_info, transactions=transactions, books=books, digitalbooks=digitalbooks)
+
+@app.route('/member/edit', methods=['GET', 'POST'])
+@member_required
+def edit_member_details():
+    connection = get_db_connection()
+    cur = connection.cursor()
+
+    if request.method == 'POST':
+        name = request.form['name']
+        email = request.form['email']
+
+        cur.execute("UPDATE members SET name=%s, email=%s WHERE id=%s", (name, email, session['member_id']))
+        connection.commit()
+        flash("Details updated successfully!", "success")
+        return redirect(url_for('member_dashboard'))
+
+    cur.execute("SELECT * FROM members WHERE id = %s", (session['member_id'],))
+    member_info = cur.fetchone()
+    cur.close()
+    connection.close()
+
+    return render_template('edit_member.html', member=member_info)
+@app.route('/member_logout')
+def member_logout():
+    session.pop('member_id', None)
+    session.pop('member_name', None)
+    flash("You have been logged out", "success")
+    return redirect(url_for('member_login'))
+
+
 
 
 
