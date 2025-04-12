@@ -346,6 +346,7 @@ class AddBook(Form):
     publisher = StringField('Publisher', [validators.Length(min=2, max=255)])
     total_quantity = IntegerField(
         'Total No. of Books', [validators.NumberRange(min=1)])
+    genre = StringField('Genre', [validators.Optional(), validators.Length(min=2, max=255)])
 
 
 # Add Book
@@ -371,7 +372,7 @@ def add_book():
             return render_template('add_book.html', form=form, error=error)
 
         # Execute SQL Query
-        cur.execute("INSERT INTO books (id,title,author,average_rating,isbn,isbn13,language_code,num_pages,ratings_count,text_reviews_count,publication_date,publisher,total_quantity,available_quantity,rented_count) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", [
+        cur.execute("INSERT INTO books (id,title,author,average_rating,isbn,isbn13,language_code,num_pages,ratings_count,text_reviews_count,publication_date,publisher,genre,total_quantity,available_quantity,rented_count) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", [
             form.id.data,
             form.title.data,
             form.author.data,
@@ -384,6 +385,7 @@ def add_book():
             form.text_reviews_count.data,
             form.publication_date.data,
             form.publisher.data,
+            form.genre.data,
             form.total_quantity.data,
             # When a book is first added, available_quantity = total_quantity
             form.total_quantity.data,
@@ -546,7 +548,7 @@ def edit_book(id):
             (form.total_quantity.data - book['total_quantity'])
 
         # Execute SQL Query
-        cur.execute("UPDATE books SET id=%s,title=%s,author=%s,average_rating=%s,isbn=%s,isbn13=%s,language_code=%s,num_pages=%s,ratings_count=%s,text_reviews_count=%s,publication_date=%s,publisher=%s,total_quantity=%s,available_quantity=%s WHERE id=%s", [
+        cur.execute("UPDATE books SET id=%s,title=%s,author=%s,average_rating=%s,isbn=%s,isbn13=%s,language_code=%s,num_pages=%s,ratings_count=%s,text_reviews_count=%s,publication_date=%s,publisher=%s,genre=%s,total_quantity=%s,available_quantity=%s WHERE id=%s", [
             form.id.data,
             form.title.data,
             form.author.data,
@@ -559,6 +561,7 @@ def edit_book(id):
             form.text_reviews_count.data,
             form.publication_date.data,
             form.publisher.data,
+            form.genre.data,
             form.total_quantity.data,
             available_quantity,
             id])
@@ -1529,6 +1532,7 @@ def edit_member_details():
 
     return render_template('edit_member.html', member=member_info)
 @app.route('/member_logout')
+@member_required
 def member_logout():
     session.pop('member_id', None)
     session.pop('member_name', None)
@@ -1537,6 +1541,26 @@ def member_logout():
 
 
 
+
+
+
+@app.route('/member/search_books', methods=['GET', 'POST'])
+@member_required
+def search_books():
+    results = []
+    if request.method == 'POST':
+        query = request.form['query']
+
+        connection = get_db_connection()
+        cur = connection.cursor()
+        cur.execute("""
+            SELECT * FROM books 
+            WHERE genre LIKE %s
+        """, ('%' + query + '%'))
+        results = cur.fetchall()
+        cur.close()
+
+    return render_template('search_books.html', results=results)
 
 
 if __name__ == '__main__':

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Search Results</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .book-card {
+            height: 100%;
+            transition: transform 0.2s;
+        }
+        .book-card:hover {
+            transform: translateY(-5px);
+        }
+        .no-results {
+            padding: 2rem;
+            text-align: center;
+            background-color: #f8f9fa;
+            border-radius: 0.5rem;
+        }
+        @media (max-width: 767.98px) {
+            .card-title {
+                font-size: 1.1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-4">
+        <h3 class="mb-4 text-center text-md-start">Search Results</h3>
+        
+        {% if results %}
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-3">
+            {% for book in results %}
+            <div class="col">
+                <div class="card shadow-sm book-card">
+                    <div class="card-body">
+                        <h5 class="card-title text-primary mb-3">{{ book.title }}</h5>
+                        <div class="card-text">
+                            <p class="mb-2"><strong>Author:</strong> {{ book.author }}</p>
+                            <p class="mb-2"><strong>Publisher:</strong> {{ book.publisher }}</p>
+                            <p class="mb-2"><strong>Genre:</strong> {{ book.genre }}</p>
+                            <div class="d-flex align-items-center mt-3">
+                                <span><strong>Available:</strong></span>
+                                <div class="progress ms-2 flex-grow-1" style="height: 10px;">
+                                    <div class="progress-bar bg-success" role="progressbar" 
+                                        style="width: {{ (book.available_quantity / book.total_quantity * 100)|int }}%"
+                                        aria-valuenow="{{ book.available_quantity }}" 
+                                        aria-valuemin="0" 
+                                        aria-valuemax="{{ book.total_quantity }}">
+                                    </div>
+                                </div>
+                                <span class="ms-2">{{ book.available_quantity }}/{{ book.total_quantity }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="no-results">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" class="bi bi-search text-secondary mb-3" viewBox="0 0 16 16">
+                <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+            </svg>
+            <h5>No books found matching your query</h5>
+            <p class="text-muted">Try adjusting your search criteria or browse our catalog instead.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

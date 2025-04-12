@@ -78,6 +78,15 @@
             border-radius: 4px;
             font-size: 16px;
         }
+
+        input[type="email"] {
+            width: 100%;
+            padding: 8px 12px;
+            margin-bottom: 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 16px;
+        }
         
         button {
             background-color: var(--primary-color);
@@ -233,6 +242,8 @@
     <form method="POST" action="{{ url_for('edit_member_details') }}">
         <label for="name">Name:</label>
         <input type="text" id="name" name="name" value="{{ member.name }}" required>
+        <label for="name">Email:</label>
+        <input type="email" id="email" name="email" value="{{ member.email }}" required>
         <button type="submit">Update</button>
     </form>
 
@@ -329,6 +340,17 @@
     {% else %}
         <p>No digital books found.</p>
     {% endif %}
+
+    <div class="container mt-4">
+        <h4>Search Books by Title or Genre</h4>
+        <form action="{{ url_for('search_books') }}" method="POST" class="form-inline mb-4">
+            <div class="form-group mr-2">
+                <input type="text" name="query" class="form-control" placeholder="Enter title or genre" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Search</button>
+        </form>
+    </div>
+    
 
     <div class="nav-links">
         <a href="{{ url_for('member_dashboard') }}">Refresh Dashboard</a>

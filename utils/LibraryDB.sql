@@ -4,7 +4,7 @@ CREATE TABLE `librarydb`.`books` (
     `id` INT(11) NOT NULL AUTO_INCREMENT , 
     `title` VARCHAR(255) NOT NULL , 
     `author` VARCHAR(255) NOT NULL , 
-    `average_rating` FLOAT NULL , 
+    `average_rating` FLOAT, 
     `isbn` VARCHAR(10) NOT NULL UNIQUE, 
     `isbn13` VARCHAR(13) NOT NULL UNIQUE, 
     `language_code` VARCHAR(3), 
@@ -65,3 +65,5 @@ CREATE TABLE `librarydb`.`purchases` (
 
 ALTER TABLE purchases ADD COLUMN access_token VARCHAR(255) NOT NULL;
 ALTER TABLE purchases ADD COLUMN expires_at DATETIME NOT NULL;
+ALTER TABLE books ADD COLUMN genre VARCHAR(100) AFTER publisher;
+ALTER TABLE books MODIFY average_rating FLOAT NULL;

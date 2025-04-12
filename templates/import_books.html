@@ -1,4 +1,4 @@
-{% extends 'layout.html' %}
+<!-- {% extends 'layout.html' %}
 {% block body %}
 <div class="container py-4">
   <div class="row justify-content-center">
@@ -55,4 +55,12 @@
     </div>
   </div>
 </div>
+{% endblock %} -->
+
+{% extends 'layout.html' %}
+{% block body %}
+<form action="http://localhost:5000/import_books" method="post" enctype="multipart/form-data">
+  <input type="file" name="file" accept=".xlsx">
+  <input type="submit" value="Upload Excel">
+</form>
 {% endblock %}

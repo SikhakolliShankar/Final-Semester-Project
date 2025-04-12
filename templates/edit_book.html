@@ -70,6 +70,12 @@
               <div class="col-md-6">
                 {{render_field(form.publisher, class_="form-control", value=book.publisher)}}
               </div>
+
+              <!-- Genre -->
+              <div class="col-md-6">
+                {{render_field(form.genre, class_="form-control", value=book.genre if book.genre else '')}}
+              </div>
+
               
               <!-- Total Quantity -->
               <div class="col-md-12">
