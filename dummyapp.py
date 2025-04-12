@@ -197,6 +197,78 @@ def add_member():
     return render_template('add_member.html', form=form)
 
 
+from werkzeug.utils import secure_filename
+import os
+import pandas as pd
+from datetime import datetime
+from app import get_db_connection
+# Allowed Excel extensions
+ALLOWED_EXTENSIONS = {'xlsx'}
+
+# Check for allowed file type
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+# Route to insert members using Excel file
+@app.route('/insert_members', methods=['GET', 'POST'])
+def insert_members():
+    if request.method == 'POST':
+        if 'file' not in request.files:
+            flash('No file part', 'danger')
+            return redirect(request.url)
+
+        file = request.files['file']
+        if file.filename == '':
+            flash('No file selected', 'danger')
+            return redirect(request.url)
+
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            filepath = os.path.join('uploads', filename)
+            os.makedirs('uploads', exist_ok=True)
+            file.save(filepath)
+
+            try:
+                df = pd.read_excel(filepath, engine='openpyxl')
+            except Exception as e:
+                flash(f'Error reading Excel file: {str(e)}', 'danger')
+                return redirect(request.url)
+
+            required_columns = {'name', 'email'}
+            df.columns = df.columns.str.lower()
+
+            if not required_columns.issubset(df.columns):
+                flash('Excel file must contain columns: name, email', 'danger')
+                return redirect(request.url)
+
+            connection = get_db_connection()
+            cur = connection.cursor()
+            inserted_count = 0
+
+            for _, row in df.iterrows():
+                try:
+                    cur.execute(
+                        "INSERT INTO members (name, email) VALUES (%s, %s)",
+                        (row['name'], row['email'])
+                    )
+                    inserted_count += 1
+                except Exception as e:
+                    print(f"Error inserting member: {e}")
+                    continue
+
+            connection.commit()
+            cur.close()
+            flash(f'{inserted_count} members successfully inserted.', 'success')
+            return redirect(url_for('members'))  # Update to your actual members page
+
+        else:
+            flash('Invalid file type. Please upload a .xlsx file.', 'danger')
+            return redirect(request.url)
+
+    return render_template('insert_members.html')
+
+
+
 # Edit Member by ID
 @app.route('/edit_member/<string:id>', methods=['GET', 'POST'])
 def edit_member(id):
@@ -408,113 +480,106 @@ def add_book():
     return render_template('add_book.html', form=form)
 
 
-# Define Import-Books-Form
-class ImportBooks(Form):
-    no_of_books = IntegerField('No. of Books*', [validators.NumberRange(min=1)])
-    quantity_per_book = IntegerField(
-        'Quantity Per Book*', [validators.NumberRange(min=1)])
-    title = StringField(
-        'Title', [validators.Optional(), validators.Length(min=2, max=255)])
-    author = StringField(
-        'Author(s)', [validators.Optional(), validators.Length(min=2, max=255)])
-    isbn = StringField(
-        'ISBN', [validators.Optional(), validators.Length(min=10, max=10)])
-    publisher = StringField(
-        'Publisher', [validators.Optional(), validators.Length(min=2, max=255)])
+# from flask import Flask, request, jsonify, render_template, redirect, url_for, flash
+from werkzeug.utils import secure_filename
+import pandas as pd
+import os
+from app import get_db_connection
 
+ALLOWED_EXTENSIONS = {'xlsx'}
 
-# Import Books from Frappe API
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 @app.route('/import_books', methods=['GET', 'POST'])
 def import_books():
-    # Get form data from request
-    form = ImportBooks(request.form)
+    if request.method == 'POST':
+        if 'file' not in request.files:
+            flash('No file part in the request', 'danger')
+            return redirect(request.url)
 
-    # To handle POST request to route
-    if request.method == 'POST' and form.validate():
-        # Create request structure
-        url = 'https://frappe.io/api/method/frappe-library?'
-        parameters = {'page': 1}
-        if form.title.data:
-            parameters['title'] = form.title.data
-        if form.author.data:
-            parameters['author'] = form.author.data
-        if form.isbn.data:
-            parameters['isbn'] = form.isbn.data
-        if form.publisher.data:
-            parameters['publisher'] = form.publisher.data
+        file = request.files['file']
+        if file.filename == '':
+            flash('No file selected', 'danger')
+            return redirect(request.url)
 
-        # Create MySQLCursor
-        # cur = mysql.connection.cursor()
-        connection = get_db_connection()
-        cur = connection.cursor()
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            filepath = os.path.join('uploads', filename)
+            os.makedirs('uploads', exist_ok=True)
+            file.save(filepath)
 
-        # Loop and make request
-        no_of_books_imported = 0
-        repeated_book_ids = []
-        while(no_of_books_imported != form.no_of_books.data):
-            r = requests.get(url + urllib.parse.urlencode(parameters))
-            res = r.json()
-            # Break if message is empty
-            if not res['message']:
-                break
+            try:
+                df = pd.read_excel(filepath, engine='openpyxl')
 
-            for book in res['message']:
-                # Check if book with same ID already exists
-                result = cur.execute(
-                    "SELECT id FROM books WHERE id=%s", [book['bookID']])
-                book_found = cur.fetchone()
-                if(not book_found):
-                    # Execute SQL Query
-                    cur.execute("INSERT INTO books (id,title,author,average_rating,isbn,isbn13,language_code,num_pages,ratings_count,text_reviews_count,publication_date,publisher,total_quantity,available_quantity,rented_count) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,0)", [
-                        book['bookID'],
-                        book['title'],
-                        book['authors'],
-                        book['average_rating'],
-                        book['isbn'],
-                        book['isbn13'],
-                        book['language_code'],
-                        book['  num_pages'],
-                        book['ratings_count'],
-                        book['text_reviews_count'],
-                        datetime.strptime(book['publication_date'], "%m/%d/%Y").strftime("%Y-%m-%d"),
-                        book['publisher'],
-                        form.quantity_per_book.data,
-                        # When a book is first added, available_quantity = total_quantity
-                        form.quantity_per_book.data
-                    ])
-                    no_of_books_imported += 1
-                    if no_of_books_imported == form.no_of_books.data:
-                        break
-                else:
-                    repeated_book_ids.append(book['bookID'])
-            parameters['page'] = parameters['page'] + 1
+                required_columns = [
+                    'title', 'author', 'isbn', 'isbn13', 'publication_date', 'publisher',
+                    'genre', 'total_quantity', 'available_quantity'
+                ]
+                for col in required_columns:
+                    if col not in df.columns:
+                        flash(f'Missing required column: {col}', 'danger')
+                        return redirect(request.url)
 
-        # Commit to DB
-        connection.commit()
+                df['average_rating'] = pd.to_numeric(df.get('average_rating'), errors='coerce')
+                df['publication_date'] = pd.to_datetime(df['publication_date'], errors='coerce')
+                df['isbn'] = df['isbn'].apply(lambda x: str(int(float(x))) if pd.notnull(x) else None)
+                df['isbn13'] = df['isbn13'].apply(lambda x: str(int(float(x))) if pd.notnull(x) else None)
+                df = df.where(pd.notnull(df), None)
 
-        # Close DB Connection
-        cur.close()
+                connection = get_db_connection()
+                cursor = connection.cursor()
 
-        # Flash Success/Warning Message
-        msg = str(no_of_books_imported) + "/" + \
-            str(form.no_of_books.data) + " books have been imported. "
-        msgType = 'success'
-        if no_of_books_imported != form.no_of_books.data:
-            msgType = 'warning'
-            if len(repeated_book_ids) > 0:
-                msg += str(len(repeated_book_ids)) + \
-                    " books were found with already exisiting IDs."
-            else:
-                msg += str(form.no_of_books.data - no_of_books_imported) + \
-                    " matching books were not found."
+                insert_query = """
+                    INSERT INTO books (
+                        title, author, average_rating, isbn, isbn13, language_code,
+                        num_pages, ratings_count, text_reviews_count, publication_date,
+                        publisher, genre, total_quantity, available_quantity, rented_count
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """
 
-        flash(msg, msgType)
+                skipped_books = []
 
-        # Redirect to show all books
-        return redirect(url_for('books'))
+                for _, row in df.iterrows():
+                    try:
+                        cursor.execute(insert_query, (
+                            row['title'],
+                            row['author'],
+                            row.get('average_rating'),
+                            row['isbn'],
+                            row['isbn13'],
+                            row.get('language_code'),
+                            row.get('num_pages'),
+                            row.get('ratings_count'),
+                            row.get('text_reviews_count'),
+                            row['publication_date'].strftime('%Y-%m-%d') if pd.notnull(row['publication_date']) else None,
+                            row['publisher'],
+                            row['genre'],
+                            row['total_quantity'],
+                            row['available_quantity'],
+                            row.get('rented_count', 0)
+                        ))
+                    except Exception as e:
+                        skipped_books.append({'isbn': row.get('isbn'), 'error': str(e)})
 
-    # To handle GET request to route
-    return render_template('import_books.html', form=form)
+                connection.commit()
+                cursor.close()
+                connection.close()
+
+                # flash(f"Books imported successfully. Skipped: {len(skipped_books)}", "success")
+                flash(f"Books imported successfully.", "success")
+                return redirect(url_for('books'))
+
+            except Exception as e:
+                flash(f"Failed to import books: {str(e)}", "danger")
+                return redirect(request.url)
+
+        else:
+            flash('Invalid file format. Please upload an Excel (.xlsx) file.', 'danger')
+            return redirect(request.url)
+
+    return render_template('import_books.html')
+
 
 
 # Edit Book by ID
