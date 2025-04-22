@@ -105,6 +105,7 @@ from functools import wraps
 
 # Homepage
 @app.route('/home')
+@admin_required
 def index():
     return render_template('home.html')
 
@@ -423,6 +424,7 @@ class AddBook(Form):
 
 # Add Book
 @app.route('/add_book', methods=['GET', 'POST'])
+@admin_required
 def add_book():
     # Get form data from request
     form = AddBook(request.form)
@@ -492,6 +494,7 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @app.route('/import_books', methods=['GET', 'POST'])
+@admin_required
 def import_books():
     if request.method == 'POST':
         if 'file' not in request.files:
@@ -584,6 +587,7 @@ def import_books():
 
 # Edit Book by ID
 @app.route('/edit_book/<string:id>', methods=['GET', 'POST'])
+@admin_required
 def edit_book(id):
     # Get form data from request
     form = AddBook(request.form)
@@ -651,6 +655,7 @@ def edit_book(id):
 # Delete Book by ID
 # Using POST instead of DELETE because HTML form can only send GET and POST requests
 @app.route('/delete_book/<string:id>', methods=['POST'])
+@admin_required
 def delete_book(id):
     # Create MySQLCursor
     # cur = mysql.connection.cursor()
@@ -686,6 +691,7 @@ def delete_book(id):
 
 # Transactions
 @app.route('/transactions')
+@admin_required
 def transactions():
     # Create MySQLCursor
     # cur = mysql.connection.cursor()
@@ -792,6 +798,7 @@ def send_alerts():
 '''
 
 @app.route('/send_email/<string:transaction_id>', methods=['GET'])
+@admin_required
 def send_email(transaction_id):
     """Send reminder email for overdue books to library members."""
     try:
@@ -946,6 +953,7 @@ class IssueBook(Form):
 
 # Issue Book
 @app.route('/issue_book', methods=['GET', 'POST'])
+@admin_required
 def issue_book():
     form = IssueBook(request.form)
     connection = get_db_connection()
@@ -1006,6 +1014,7 @@ class ReturnBook(Form):
 
 # Define Issue-Book-Form
 @app.route('/return_book/<string:transaction_id>', methods=['GET', 'POST'])
+@admin_required
 def return_book(transaction_id):
     form = ReturnBook(request.form)
     connection = get_db_connection()
@@ -1091,6 +1100,7 @@ def return_book(transaction_id):
 
 
 @app.route('/transaction/<string:transaction_id>')
+@admin_required
 def delete_transaction(transaction_id):
     # Create MySQLCursor
     # cur = mysql.connection.cursor()
@@ -1115,6 +1125,7 @@ def delete_transaction(transaction_id):
 
 # Reports
 @app.route('/reports')
+@admin_required
 def reports():
     # Create MySQLCursor
     # cur = mysql.connection.cursor()
@@ -1151,6 +1162,7 @@ class SearchBook(Form):
 
 # Search
 @app.route('/search_book', methods=['GET', 'POST'])
+@admin_required
 def search_book():
     # Get form data from request
     form = SearchBook(request.form)
@@ -1186,6 +1198,7 @@ def search_book():
 
 
 @app.route("/digital_books")
+@admin_required
 def digital_books(): 
     
     # Create MySQLCursor
@@ -1208,6 +1221,7 @@ class AddDigitalBook(Form):
     access_link = StringField('access_link', [validators.Length(min=2, max=255)])
     
 @app.route("/add_digital_book", methods=['GET','POST'])
+@admin_required
 def add_digital_book():
     form=AddDigitalBook(request.form)
     if request.method == 'POST' and form.validate():
@@ -1414,6 +1428,7 @@ Library Management Team
 
 # Route to Issue Digital Book
 @app.route('/issue_digital_book', methods=['GET', 'POST'])
+@admin_required
 def issue_digital_book():
     form = IssueDigitalBook(request.form)
     connection = get_db_connection()
@@ -1474,6 +1489,7 @@ def issue_digital_book():
 
 # Route to Display All Digital Book Transactions
 @app.route('/digital_books_transactions')
+@admin_required
 def digital_books_transactions():
     connection = get_db_connection()
     cur = connection.cursor()
@@ -1497,6 +1513,7 @@ def digital_books_transactions():
     
 app.secret_key = "your_very_secret_key"  # Set a unique secret key
 @app.route("/view-digital-book/<token>")
+@admin_required
 def view_digital_book(token):
     connection = get_db_connection()
     cur = connection.cursor()
@@ -1541,6 +1558,7 @@ def member_login():
             flash("Email not found. Please try again.", "danger")
             return redirect(url_for('member_login'))
     return render_template('member_login.html')
+
 def member_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):

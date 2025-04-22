@@ -67,3 +67,12 @@ ALTER TABLE purchases ADD COLUMN access_token VARCHAR(255) NOT NULL;
 ALTER TABLE purchases ADD COLUMN expires_at DATETIME NOT NULL;
 ALTER TABLE books ADD COLUMN genre VARCHAR(100) AFTER publisher;
 ALTER TABLE books MODIFY average_rating FLOAT NULL;
+
+CREATE TABLE IF NOT EXISTS `email_notifications` (
+                    `id` INT(11) NOT NULL AUTO_INCREMENT,
+                    `transaction_id` INT(11) NOT NULL,
+                    `sent_on` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `days_overdue` INT(11) NOT NULL,
+                    PRIMARY KEY (`id`),
+                    FOREIGN KEY (`transaction_id`) REFERENCES transactions(`id`) ON DELETE CASCADE
+                ) ENGINE = InnoDB;

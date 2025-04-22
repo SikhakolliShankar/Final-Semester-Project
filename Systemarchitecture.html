@@ -1,0 +1,154 @@
+<svg viewBox="0 0 900 600" xmlns="http://www.w3.org/2000/svg">
+    <!-- Styles -->
+    <style>
+      .layer-box {
+        stroke-width: 2px;
+        rx: 8;
+        ry: 8;
+      }
+      .presentation-layer {
+        fill: #e6f2ff;
+        stroke: #3498db;
+      }
+      .application-layer {
+        fill: #e6fff2;
+        stroke: #2ecc71;
+      }
+      .data-layer {
+        fill: #ffeee6;
+        stroke: #e74c3c;
+      }
+      .component {
+        fill: white;
+        stroke-width: 1.5px;
+        rx: 6;
+        ry: 6;
+      }
+      .presentation-component {
+        stroke: #3498db;
+      }
+      .application-component {
+        stroke: #2ecc71;
+      }
+      .data-component {
+        stroke: #e74c3c;
+      }
+      .layer-title {
+        font-family: Arial, sans-serif;
+        font-size: 20px;
+        font-weight: bold;
+      }
+      .component-title {
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+        font-weight: bold;
+      }
+      .component-text {
+        font-family: Arial, sans-serif;
+        font-size: 12px;
+      }
+      .flow-arrow {
+        stroke: #7f8c8d;
+        stroke-width: 2px;
+        fill: none;
+        marker-end: url(#arrowhead);
+      }
+      .user-icon {
+        fill: #95a5a6;
+        stroke: #7f8c8d;
+        stroke-width: 1px;
+      }
+    </style>
+    
+    <!-- Arrow marker definition -->
+    <defs>
+      <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+        <polygon points="0 0, 10 3.5, 0 7" fill="#7f8c8d"/>
+      </marker>
+    </defs>
+    
+    <!-- Layer boxes -->
+    <rect x="100" y="50" width="700" height="150" class="layer-box presentation-layer"/>
+    <rect x="100" y="230" width="700" height="170" class="layer-box application-layer"/>
+    <rect x="100" y="430" width="700" height="120" class="layer-box data-layer"/>
+    
+    <!-- Layer titles -->
+    <text x="130" y="80" class="layer-title" fill="#3498db">Presentation Layer (Frontend)</text>
+    <text x="130" y="260" class="layer-title" fill="#2ecc71">Application Layer (Backend)</text>
+    <text x="130" y="460" class="layer-title" fill="#e74c3c">Data Layer (Database)</text>
+    
+    <!-- Presentation Layer Components -->
+    <rect x="150" y="100" width="160" height="80" class="component presentation-component"/>
+    <text x="230" y="125" text-anchor="middle" class="component-title">User Interface</text>
+    <text x="230" y="145" text-anchor="middle" class="component-text">HTML / CSS</text>
+    <text x="230" y="165" text-anchor="middle" class="component-text">JavaScript</text>
+    
+    <rect x="350" y="100" width="160" height="80" class="component presentation-component"/>
+    <text x="430" y="125" text-anchor="middle" class="component-title">Frontend Components</text>
+    <text x="430" y="145" text-anchor="middle" class="component-text">Admin Dashboard</text>
+    <text x="430" y="165" text-anchor="middle" class="component-text">Member Portal</text>
+    
+    <rect x="550" y="100" width="160" height="80" class="component presentation-component"/>
+    <text x="630" y="125" text-anchor="middle" class="component-title">API Interface</text>
+    <text x="630" y="145" text-anchor="middle" class="component-text">REST API Calls</text>
+    <text x="630" y="165" text-anchor="middle" class="component-text">AJAX</text>
+    
+    <!-- Application Layer Components -->
+    <rect x="150" y="280" width="160" height="100" class="component application-component"/>
+    <text x="230" y="305" text-anchor="middle" class="component-title">Flask Web Framework</text>
+    <text x="230" y="325" text-anchor="middle" class="component-text">API Endpoints</text>
+    <text x="230" y="345" text-anchor="middle" class="component-text">Route Handlers</text>
+    <text x="230" y="365" text-anchor="middle" class="component-text">Authentication</text>
+    
+    <rect x="350" y="280" width="160" height="100" class="component application-component"/>
+    <text x="430" y="305" text-anchor="middle" class="component-title">Business Logic</text>
+    <text x="430" y="325" text-anchor="middle" class="component-text">Book Management</text>
+    <text x="430" y="345" text-anchor="middle" class="component-text">Member Management</text>
+    <text x="430" y="365" text-anchor="middle" class="component-text">Transaction Processing</text>
+    
+    <rect x="550" y="280" width="160" height="100" class="component application-component"/>
+    <text x="630" y="305" text-anchor="middle" class="component-title">Services</text>
+    <text x="630" y="325" text-anchor="middle" class="component-text">Email Notifications</text>
+    <text x="630" y="345" text-anchor="middle" class="component-text">Report Generation</text>
+    <text x="630" y="365" text-anchor="middle" class="component-text">Digital Access Control</text>
+    
+    <!-- Data Layer Components -->
+    <rect x="200" y="470" width="160" height="60" class="component data-component"/>
+    <text x="280" y="495" text-anchor="middle" class="component-title">MySQL Database</text>
+    <text x="280" y="515" text-anchor="middle" class="component-text">Tables & Relationships</text>
+    
+    <rect x="500" y="470" width="160" height="60" class="component data-component"/>
+    <text x="580" y="495" text-anchor="middle" class="component-title">Data Access Layer</text>
+    <text x="580" y="515" text-anchor="middle" class="component-text">ORM / SQL Queries</text>
+    
+    <!-- User icon -->
+    <circle cx="50" cy="125" r="25" class="user-icon"/>
+    <circle cx="50" cy="105" r="10" class="user-icon"/>
+    <path d="M 30 145 C 30 130, 70 130, 70 145" class="user-icon" fill="none"/>
+    
+    <!-- Flow arrows -->
+    <!-- User to Frontend -->
+    <path d="M 80 125 L 140 125" class="flow-arrow"/>
+    
+    <!-- Frontend Component Connections -->
+    <path d="M 310 140 L 350 140" class="flow-arrow"/>
+    <path d="M 510 140 L 550 140" class="flow-arrow"/>
+    
+    <!-- Presentation to Application Layer -->
+    <path d="M 630 180 L 630 200 L 430 200 L 430 280" class="flow-arrow"/>
+    
+    <!-- Application Layer Component Connections -->
+    <path d="M 310 330 L 350 330" class="flow-arrow"/>
+    <path d="M 510 330 L 550 330" class="flow-arrow"/>
+    
+    <!-- Application to Data Layer -->
+    <path d="M 430 380 L 430 400 L 580 400 L 580 470" class="flow-arrow"/>
+    
+    <!-- Data Layer Connection -->
+    <path d="M 500 500 L 360 500" class="flow-arrow"/>
+    
+    <!-- Labels -->
+    <text x="50" y="180" text-anchor="middle" class="component-text">Users</text>
+    <text x="450" y="215" text-anchor="middle" class="component-text">HTTP/HTTPS Requests & Responses</text>
+    <text x="450" y="415" text-anchor="middle" class="component-text">Database Queries & Results</text>
+  </svg>
