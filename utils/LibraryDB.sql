@@ -20,7 +20,7 @@ CREATE TABLE `librarydb`.`books` (
 
 CREATE TABLE `librarydb`.`members` ( 
     `id` INT(11) NOT NULL AUTO_INCREMENT , 
-    `name` VARCHAR(100) NOT NULL , 
+    `name` VARCHAR(100) NOT NULL UNIQUE, 
     `email` VARCHAR(100) NOT NULL UNIQUE,
     `registered_on` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP , 
     `outstanding_debt` FLOAT NOT NULL DEFAULT 0, 
