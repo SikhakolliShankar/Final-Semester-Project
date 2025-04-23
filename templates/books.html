@@ -14,6 +14,9 @@
             <a class="btn btn-secondary d-flex align-items-center" href="/import_books">
                 <i class="bi bi-cloud-download me-2"></i>Import Books
             </a>
+            <a class="btn btn-primary d-flex align-items-center" href="/export_books">
+                <i class="bi bi-cloud-upload me-2"></i>Export Books
+            </a>
         </div>
     </div>
 
@@ -90,6 +93,19 @@
                         {% endfor %}
                     </tbody>
                 </table>
+            </div>
+        </div>
+        
+        <!-- Export Options -->
+        <div class="card-footer bg-white d-flex justify-content-end py-2">
+            <div class="dropdown">
+                <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-download me-1"></i> Export Options
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="exportDropdown">
+                    <li><a class="dropdown-item" href="/export_books">Export All Books</a></li>
+                    <li><a class="dropdown-item" href="/export_books_form">Export with Filters</a></li>
+                </ul>
             </div>
         </div>
     </div>

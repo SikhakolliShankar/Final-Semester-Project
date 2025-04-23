@@ -9,6 +9,8 @@ import MySQLdb
 import urllib
 import requests
 from flask import send_file
+from io import BytesIO
+from openpyxl.utils import get_column_letter
 
 
 import smtplib
@@ -178,22 +180,27 @@ def add_member():
         connection = get_db_connection()
         cur = connection.cursor()
 
+        try:
         # Execute SQL Query
-        cur.execute(
-            "INSERT INTO members (name, email) VALUES (%s, %s)", (name, email))
+            cur.execute(
+                "INSERT INTO members (name, email) VALUES (%s, %s)", (name, email))
 
-        # Commit to DB
-        connection.commit()
+            # Commit to DB
+            connection.commit()
 
-        # Close DB Connection
-        cur.close()
+            # Close DB Connection
+            cur.close()
 
-        # Flash Success Message
-        flash("New Member Added", "success")
+            # Flash Success Message
+            flash("New Member Added", "success")
 
-        # Redirect to show all members
-        return redirect(url_for('members'))
-
+            # Redirect to show all members
+            return redirect(url_for('members'))
+        
+        except Exception as e:
+            # Handle duplicate email error
+            flash("Error: A member with this name or email already exists.", "danger")
+            connection.rollback()
     # To handle GET request to route
     return render_template('add_member.html', form=form)
 
@@ -268,7 +275,58 @@ def insert_members():
 
     return render_template('insert_members.html')
 
+@app.route('/export_members', methods=['GET'])
+def export_members():
+    try:
+        connection = get_db_connection()
+        cursor = connection.cursor()
+        # Fetch all members from the database
+        query = "SELECT * FROM members"
+        cursor.execute(query)
+        members = cursor.fetchall()
+        cursor.close()
+        connection.close()
 
+        if not members:
+            flash("No members found to export", "warning")
+            return redirect(url_for('members'))
+
+        # Convert to DataFrame
+        df = pd.DataFrame(members)
+        
+        # Create a BytesIO object to store the Excel file
+        output = BytesIO()
+        
+        # Create a timestamp for the filename
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        
+        # Create Excel writer and write data
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            df.to_excel(writer, index=False, sheet_name='Members')
+            
+            # Auto-adjust columns' width
+            worksheet = writer.sheets['Members']
+            for i, col in enumerate(df.columns):
+                column_width = max(df[col].astype(str).map(len).max(), len(col)) + 2
+                worksheet.column_dimensions[get_column_letter(i+1)].width = column_width
+        
+        # Make sure to get all the data written to the BytesIO object
+        output.seek(0)
+        
+        # Create the file name
+        filename = f"library_members_export_{timestamp}.xlsx"
+        
+        # Return the file for download
+        return send_file(
+            output,
+            as_attachment=True,
+            download_name=filename,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+    
+    except Exception as e:
+        flash(f"Failed to export members: {str(e)}", "danger")
+        return redirect(url_for('members'))
 
 # Edit Member by ID
 @app.route('/edit_member/<string:id>', methods=['GET', 'POST'])
@@ -583,6 +641,66 @@ def import_books():
 
     return render_template('import_books.html')
 
+@app.route('/export_books', methods=['GET'])
+@admin_required
+def export_books():
+    try:
+        # Get database connection
+        connection = get_db_connection()
+        cursor = connection.cursor()
+        
+        # Query to get all books from database
+        query = """
+            SELECT 
+                id, title, author, average_rating, isbn, isbn13, language_code,
+                num_pages, ratings_count, text_reviews_count, publication_date,
+                publisher, genre, total_quantity, available_quantity, rented_count
+            FROM books
+        """
+        cursor.execute(query)
+        books = cursor.fetchall()
+        cursor.close()
+        connection.close()
+        
+        if not books:
+            flash("No books found to export", "warning")
+            return redirect(url_for('books'))
+        
+        # Convert to DataFrame
+        df = pd.DataFrame(books)
+
+        # Create a BytesIO object
+        output = BytesIO()
+        
+        # Create Excel writer
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            df.to_excel(writer, index=False, sheet_name='Books')
+            
+            # Auto-adjust columns' width
+            worksheet = writer.sheets['Books']
+            for i, col in enumerate(df.columns):
+                column_width = max(df[col].astype(str).map(len).max(), len(col)) + 2
+                worksheet.column_dimensions[worksheet.cell(row=1, column=i+1).column_letter].width = column_width
+        
+        # Set the file pointer at the beginning
+        output.seek(0)
+        
+        # Add timestamp to filename
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"library_books_export_{timestamp}.xlsx"
+        
+        # Return the Excel file
+        return send_file(
+            output,
+            as_attachment=True,
+            download_name=filename,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        
+    except Exception as e:
+        # logging.error(f"Error exporting books: {str(e)}")
+        flash(f"Error exporting books: {str(e)}", "danger")
+        return redirect(url_for('books'))
 
 
 # Edit Book by ID
