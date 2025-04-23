@@ -951,7 +951,6 @@ class IssueBook(Form):
                              validators.NumberRange(min=1)])
 
 
-# Issue Book
 @app.route('/issue_book', methods=['GET', 'POST'])
 @admin_required
 def issue_book():
@@ -979,12 +978,12 @@ def issue_book():
             error = 'No copies of this book are available to be rented'
             return render_template('issue_book.html', form=form, error=error)
 
-        total_charge = form.per_day_fee.data  # initial expected charge (1 day at least)
+        total_charge = form.per_day_fee.data  # Minimum charge = 1 day
 
         cur.execute("""
-            INSERT INTO transactions (book_id, member_id, per_day_fee, total_charge, amount_paid)
-            VALUES (%s, %s, %s, %s, %s)
-        """, [form.book_id.data, form.member_id.data, form.per_day_fee.data, total_charge, 0.0])
+            INSERT INTO transactions (book_id, member_id, per_day_fee, total_charge, amount_paid, borrowed_on)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """, [form.book_id.data, form.member_id.data, form.per_day_fee.data, total_charge, 0.0, datetime.now()])
 
         cur.execute("""
             UPDATE books SET available_quantity = available_quantity - 1,
@@ -992,7 +991,7 @@ def issue_book():
             WHERE id=%s
         """, [form.book_id.data])
 
-        # Update member's debt immediately
+        # Update member's debt
         cur.execute("SELECT outstanding_debt FROM members WHERE id=%s", [form.member_id.data])
         existing_debt = float(cur.fetchone()['outstanding_debt'])
         updated_debt = existing_debt + total_charge
@@ -1001,13 +1000,141 @@ def issue_book():
             UPDATE members SET outstanding_debt = %s WHERE id = %s
         """, [updated_debt, form.member_id.data])
 
+        # Get additional data for email
+        cur.execute("SELECT title FROM books WHERE id=%s", [form.book_id.data])
+        book_title = cur.fetchone()['title']
+
+        cur.execute("SELECT name, email FROM members WHERE id=%s", [form.member_id.data])
+        member_info = cur.fetchone()
+        member_name = member_info['name']
+        member_email = member_info['email']
+
         connection.commit()
         cur.close()
 
-        flash("Book Issued", "success")
+        # Calculate return date
+        issue_date = datetime.now()
+        return_date = issue_date + timedelta(days=7)
+
+
+        SMTP_SERVER = "smtp.gmail.com"
+        SMTP_PORT = 587
+        SENDER_EMAIL = "sikhakollishankar0503@gmail.com"
+        SENDER_PASSWORD = "cicj huni rsfi ouaw"
+
+        msg = MIMEMultipart()
+        msg['From'] = SENDER_EMAIL
+        recipient_email = member_email
+        msg['To'] = recipient_email
+        print(recipient_email, member_email)
+        msg['Subject'] = "Details for your Transaction"
+
+        # Send email
+
+        html_body = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {{
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }}
+        .container {{
+            width: 100%;
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }}
+        .header {{
+            text-align: center;
+            margin-bottom: 20px;
+        }}
+        .header h2 {{
+            color: #4CAF50;
+            font-size: 24px;
+            margin: 0;
+        }}
+        .content {{
+            font-size: 16px;
+            line-height: 1.5;
+        }}
+        .content p {{
+            margin-bottom: 15px;
+        }}
+        .footer {{
+            font-size: 12px;
+            text-align: center;
+            color: #777;
+            margin-top: 30px;
+        }}
+        .footer a {{
+            color: #4CAF50;
+            text-decoration: none;
+        }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>Library Book Issued</h2>
+        </div>
+        <div class="content">
+            <p>Dear {member_name},</p>
+            <p>You have been issued the following book from the library:</p>
+            <table style="width: 100%; border-spacing: 10px 0;">
+                <tr>
+                    <td><strong>Book Title:</strong></td>
+                    <td>{book_title}</td>
+                </tr>
+                <tr>
+                    <td><strong>Issued On:</strong></td>
+                    <td>{issue_date.strftime('%Y-%m-%d')}</td>
+                </tr>
+                <tr>
+                    <td><strong>Return By:</strong></td>
+                    <td>{return_date.strftime('%Y-%m-%d')}</td>
+                </tr>
+                <tr>
+                    <td><strong>Per Day Fee:</strong></td>
+                    <td>₹{form.per_day_fee.data}</td>
+                </tr>
+            </table>
+            <p>Please ensure the book is returned on or before the return date to avoid additional charges.</p>
+        </div>
+        <div class="footer">
+            <p>Thank you,<br>Library Management Team</p>
+            <p>For any inquiries, contact us at <a href="mailto:library@example.com">library@example.com</a></p>
+        </div>
+    </div>
+</body>
+</html>
+"""
+
+        try:
+            msg.attach(MIMEText(html_body, 'html'))
+            with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+                server.starttls()
+                server.login(SENDER_EMAIL, SENDER_PASSWORD)
+                server.send_message(msg)
+        except Exception as email_err:
+            app.logger.error(f"Failed to send issue notification: {str(email_err)}")
+            print(email_err)
+        except Exception as e:
+            print(e)
+
+        flash("Book Issued and Email Sent", "success")
         return redirect(url_for('transactions'))
 
     return render_template('issue_book.html', form=form)
+
+
 
 class ReturnBook(Form):
     amount_paid = FloatField('Amount Paid', [validators.NumberRange(min=0)])
@@ -1073,7 +1200,7 @@ def return_book(transaction_id):
                 UPDATE transactions SET returned_on=%s, total_charge=%s, amount_paid=%s WHERE id=%s
             """, [datetime.now(), total_charge, amount_paid, transaction_id])
 
-            new_debt = current_debt - previous_payment + transaction_debt
+            new_debt = current_debt - amount_paid
             cur.execute("""
                 UPDATE members SET outstanding_debt=%s, amount_spent=%s WHERE id=%s
             """, [new_debt, current_spent + amount_paid, transaction['member_id']])
