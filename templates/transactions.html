@@ -1,4 +1,5 @@
 {% extends 'layout.html' %}
+
 {% block body %}
 <div class="container py-4">
     <!-- Header Section -->
@@ -124,8 +125,6 @@
             </div>
         </div>
     </div>
-    
-    
     {% else %}
     <div class="card border-0 shadow-sm">
         <div class="card-body p-5 text-center">
@@ -184,107 +183,133 @@
 
 <script>
     document.addEventListener("DOMContentLoaded", function() {
-        // Function to calculate days between two dates
-        function daysBetween(date1, date2) {
-            const oneDay = 24 * 60 * 60 * 1000; // hours*minutes*seconds*milliseconds
-            const diffTime = Math.abs(date2 - date1);
-            return Math.floor(diffTime / oneDay);
-        }
+    // Function to calculate days between two dates
+    function daysBetween(date1, date2) {
+        const oneDay = 24 * 60 * 60 * 1000; // hours*minutes*seconds*milliseconds
+        const diffTime = Math.abs(date2 - date1);
+        return Math.floor(diffTime / oneDay);
+    }
+    
+    // Function to check for overdue transactions
+    function markOverdueTransactions() {
+        const rows = document.querySelectorAll('.transaction-row');
+        const today = new Date();
         
-        // Function to check for overdue transactions
-        function markOverdueTransactions() {
-            const rows = document.querySelectorAll('.transaction-row');
-            const today = new Date();
-            
-            rows.forEach(row => {
-                // Only check open transactions
-                if (row.dataset.status === 'open') {
-                    const borrowedDateStr = row.dataset.borrowedOn;
-                    const borrowedDate = new Date(borrowedDateStr);
-                    const daysDiff = daysBetween(borrowedDate, today);
-                    
-                    // Mark as overdue if more than 10 days
-                    if (daysDiff > 10) {
-                        row.classList.add('overdue');
-                        const badge = row.querySelector('.overdue-badge');
+        rows.forEach(row => {
+            // Only check open transactions
+            if (row.dataset.status === 'open') {
+                const borrowedDateStr = row.dataset.borrowedOn;
+                const borrowedDate = new Date(borrowedDateStr);
+                const daysDiff = daysBetween(borrowedDate, today);
+                
+                // Mark as overdue if more than 10 days
+                if (daysDiff > 10) {
+                    row.classList.add('overdue');
+                    const badge = row.querySelector('.overdue-badge');
+                    if (badge) {
                         badge.classList.remove('d-none');
-                        
-                        // Enable email button
-                        const emailButton = row.querySelector('.email-alert-btn');
+                    }
+                    
+                    // Enable email button
+                    const emailButton = row.querySelector('.email-alert-btn');
+                    if (emailButton) {
                         emailButton.style.pointerEvents = 'auto';
                         emailButton.style.opacity = '1';
                         emailButton.title = 'Send overdue reminder';
                     }
                 }
-            });
-        }
-        
-        // Search and filter functionality
-        const searchInput = document.getElementById('searchInput');
-        const statusFilter = document.getElementById('statusFilter');
-        const dateFilter = document.getElementById('dateFilter');
-        const resetButton = document.getElementById('resetFilters');
-        
-        function applyFilters() {
-            const searchTerm = searchInput.value.toLowerCase();
-            const statusValue = statusFilter.value;
-            const dateValue = dateFilter.value ? new Date(dateFilter.value) : null;
-            
-            document.querySelectorAll('.transaction-row').forEach(row => {
-                let showRow = true;
-                
-                // Search filter
-                if (searchTerm) {
-                    const id = row.dataset.transactionId;
-                    const bookId = row.dataset.bookId;
-                    const memberId = row.dataset.memberId;
-                    
-                    if (!id.includes(searchTerm) && !bookId.includes(searchTerm) && !memberId.includes(searchTerm)) {
-                        showRow = false;
-                    }
-                }
-                
-                // Status filter
-                if (statusValue !== 'all') {
-                    if (statusValue === 'overdue') {
-                        if (!row.classList.contains('overdue')) {
-                            showRow = false;
-                        }
-                    } else if (row.dataset.status !== statusValue) {
-                        showRow = false;
-                    }
-                }
-                
-                // Date filter
-                if (dateValue) {
-                    const borrowedDate = new Date(row.dataset.borrowedOn);
-                    if (borrowedDate.toDateString() !== dateValue.toDateString()) {
-                        showRow = false;
-                    }
-                }
-                
-                row.style.display = showRow ? '' : 'none';
-            });
-        }
-        
-        // Event listeners for filters
-        searchInput.addEventListener('keyup', applyFilters);
-        statusFilter.addEventListener('change', applyFilters);
-        dateFilter.addEventListener('change', applyFilters);
-        
-        // Reset filters
-        resetButton.addEventListener('click', function() {
-            searchInput.value = '';
-            statusFilter.value = 'all';
-            dateFilter.value = '';
-            
-            document.querySelectorAll('.transaction-row').forEach(row => {
-                row.style.display = '';
-            });
+            }
         });
+    }
+    
+    // Search and filter functionality
+    const searchInput = document.getElementById('searchInput');
+    const statusFilter = document.getElementById('statusFilter');
+    const dateFilter = document.getElementById('dateFilter');
+    const resetButton = document.getElementById('resetFilters');
+    
+    function applyFilters() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const statusValue = statusFilter.value;
+        const dateValue = dateFilter.value ? new Date(dateFilter.value) : null;
         
-        // Initialize overdue marking and email buttons
-        markOverdueTransactions();
+        document.querySelectorAll('.transaction-row').forEach(row => {
+            let showRow = true;
+            const rowText = row.textContent.toLowerCase();
+            
+            // Search filter
+            if (searchTerm && !rowText.includes(searchTerm)) {
+                showRow = false;
+            }
+            
+            // Status filter - using the correct business rules
+            if (statusValue !== 'all') {
+                if (statusValue === 'overdue') {
+                    if (!row.classList.contains('overdue')) {
+                        showRow = false;
+                    }
+                } else if (statusValue === 'open') {
+                    // Open transactions: total_charge != amount_paid
+                    const totalChargeCell = row.querySelector('td:nth-child(7)').textContent;
+                    const amountPaidCell = row.querySelector('td:nth-child(8)').textContent;
+                    
+                    const totalCharge = parseFloat(totalChargeCell.replace('$', ''));
+                    const amountPaid = amountPaidCell.includes('Unpaid') ? 0 : 
+                                       parseFloat(amountPaidCell.replace('$', ''));
+                    
+                    if (totalCharge === amountPaid) {
+                        showRow = false;
+                    }
+                } else if (statusValue === 'closed') {
+                    // Closed transactions: total_charge == amount_paid
+                    const totalChargeCell = row.querySelector('td:nth-child(7)').textContent;
+                    const amountPaidCell = row.querySelector('td:nth-child(8)').textContent;
+                    
+                    const totalCharge = parseFloat(totalChargeCell.replace('$', ''));
+                    const amountPaid = amountPaidCell.includes('Unpaid') ? 0 : 
+                                       parseFloat(amountPaidCell.replace('$', ''));
+                                       
+                    if (totalCharge !== amountPaid || amountPaidCell.includes('Unpaid')) {
+                        showRow = false;
+                    }
+                }
+            }
+            
+            // Date filter
+            if (dateValue) {
+                const borrowedDate = new Date(row.dataset.borrowedOn);
+                // Compare just the date parts
+                if (
+                    borrowedDate.getFullYear() !== dateValue.getFullYear() ||
+                    borrowedDate.getMonth() !== dateValue.getMonth() ||
+                    borrowedDate.getDate() !== dateValue.getDate()
+                ) {
+                    showRow = false;
+                }
+            }
+            
+            row.style.display = showRow ? '' : 'none';
+        });
+    }
+    
+    // Event listeners for filters
+    searchInput.addEventListener('input', applyFilters);
+    statusFilter.addEventListener('change', applyFilters);
+    dateFilter.addEventListener('change', applyFilters);
+    
+    // Reset filters
+    resetButton.addEventListener('click', function() {
+        searchInput.value = '';
+        statusFilter.value = 'all';
+        dateFilter.value = '';
+        
+        // Apply the reset
+        applyFilters();
     });
+    
+    // Initialize overdue marking and email buttons
+    markOverdueTransactions();
+});
 </script>
+
 {% endblock %}

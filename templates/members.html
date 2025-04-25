@@ -164,83 +164,84 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Make rows clickable
-        document.querySelectorAll('.member-row').forEach(row => {
-            row.addEventListener('click', function(e) {
-                // Don't navigate if clicked on action buttons or email link
-                if (!e.target.closest('.btn-group') && !e.target.closest('a')) {
-                    window.location = '/member/' + this.dataset.memberId;
-                }
-            });
+    // Make rows clickable
+    document.querySelectorAll('.member-row').forEach(row => {
+        row.addEventListener('click', function(e) {
+            // Don't navigate if clicked on action buttons or email link
+            if (!e.target.closest('.btn-group') && !e.target.closest('a')) {
+                window.location = '/member/' + this.dataset.memberId;
+            }
         });
-        
-        // Setup delete confirmation modal
-        const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
-        document.querySelectorAll('.delete-btn').forEach(btn => {
-            btn.addEventListener('click', function(e) {
-                e.stopPropagation(); // Prevent row click
-                const memberId = this.dataset.memberId;
-                const memberName = this.dataset.memberName;
-                
-                document.getElementById('memberName').textContent = memberName;
-                document.getElementById('deleteForm').action = "{{url_for('delete_member', id=0)}}".replace('0', memberId);
-                
-                deleteModal.show();
-            });
-        });
-        
-        // Search functionality
-        document.getElementById('searchInput').addEventListener('keyup', function() {
-            filterMembers();
-        });
-        
-        // Filter functionality - Apply button
-        document.getElementById('applyFilterBtn').addEventListener('click', function() {
-            filterMembers();
-        });
-        
-        // Combined filter function for both search and dropdown filters
-        function filterMembers() {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            const filterValue = document.getElementById('filterSelect').value;
-            
-            document.querySelectorAll('.member-row').forEach(row => {
-                const name = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
-                const email = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
-                const id = row.querySelector('td:nth-child(1)').textContent.toLowerCase();
-                
-                // Search term filter
-                const matchesSearch = name.includes(searchTerm) || 
-                                     email.includes(searchTerm) || 
-                                     id.includes(searchTerm);
-                
-                // Category filter
-                let matchesFilter = true;
-                if (filterValue === 'debt') {
-                    // Show members with debt > 0
-                    const debt = parseFloat(row.dataset.debt);
-                    matchesFilter = debt > 0;
-                } else if (filterValue === 'active') {
-                    // For this example, we'll consider active members as those without debt
-                    // You can modify this logic based on your definition of "active"
-                    const debt = parseFloat(row.dataset.debt);
-                    matchesFilter = debt === 0;
-                } else if (filterValue === 'recent') {
-                    // Show members registered in the last 30 days
-                    const registeredDate = new Date(row.dataset.registered);
-                    const thirtyDaysAgo = new Date();
-                    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-                    matchesFilter = registeredDate >= thirtyDaysAgo;
-                }
-                
-                // Show row only if it matches both filters
-                if (matchesSearch && matchesFilter) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
-            });
-        }
     });
+    
+    // Setup delete confirmation modal
+    const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation(); // Prevent row click
+            const memberId = this.dataset.memberId;
+            const memberName = this.dataset.memberName;
+            
+            document.getElementById('memberName').textContent = memberName;
+            document.getElementById('deleteForm').action = "{{url_for('delete_member', id=0)}}".replace('0', memberId);
+            
+            deleteModal.show();
+        });
+    });
+    
+    // Search functionality
+    document.getElementById('searchInput').addEventListener('keyup', function() {
+        filterMembers();
+    });
+    
+    // Filter functionality - Apply button
+    document.getElementById('applyFilterBtn').addEventListener('click', function() {
+        filterMembers();
+    });
+    
+    // Combined filter function for both search and dropdown filters
+    function filterMembers() {
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        const filterValue = document.getElementById('filterSelect').value;
+        const today = new Date();
+        
+        document.querySelectorAll('.member-row').forEach(row => {
+            const name = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+            const email = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
+            const id = row.querySelector('td:nth-child(1)').textContent.toLowerCase();
+            
+            // Search term filter
+            const matchesSearch = name.includes(searchTerm) || 
+                                 email.includes(searchTerm) || 
+                                 id.includes(searchTerm);
+            
+            // Category filter
+            let matchesFilter = true;
+            if (filterValue === 'debt') {
+                // Show members with debt > 0
+                const debt = parseFloat(row.dataset.debt);
+                matchesFilter = debt > 0;
+            } else if (filterValue === 'active') {
+                // Active members: those who spent money OR have debt
+                const debt = parseFloat(row.dataset.debt);
+                const amountSpent = parseFloat(row.querySelector('td:nth-child(6)').textContent.replace('$', ''));
+                matchesFilter = amountSpent > 0 || debt > 0;
+            } else if (filterValue === 'recent') {
+                // Show members registered in the last 3 days
+                const registeredDate = new Date(row.dataset.registered);
+                const threeDaysAgo = new Date();
+                threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+                matchesFilter = registeredDate >= threeDaysAgo;
+            }
+            
+            // Show row only if it matches both filters
+            if (matchesSearch && matchesFilter) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+});
 </script>
 {% endblock %}

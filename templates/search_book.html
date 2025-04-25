@@ -286,6 +286,11 @@
           {{render_field(form.author, class_="form-control", placeholder="Enter author name")}}
         </div>
       </div>
+      <div class="col-md-5 mb-3">
+        <div class="form-group">
+          {{render_field(form.genre, class_="form-control", placeholder="Enter Genre")}}
+        </div>
+      </div>
       <div class="col-md-2 d-flex align-items-end mb-3">
         <button type="submit" class="search-btn w-100" value="Submit">
           <i class="fas fa-search"></i> Search
@@ -316,6 +321,7 @@
           <th width="10%">Total</th>
           <th width="10%">Available</th>
           <th width="10%">Rented</th>
+          <th width="10%">Genre</th>
           <th width="22%" class="text-end">Actions</th>
         </tr>
       </thead>
@@ -341,6 +347,9 @@
           </td>
           <td class="table-cell quantity rented" onclick="window.location='/book/{{book.id}}';">
             {{book.rented_count}}
+          </td>
+          <td class="table-cell quantity rented" onclick="window.location='/book/{{book.id}}';">
+            {{book.genre}}
           </td>
           <td class="table-cell text-end">
             <div class="action-buttons">

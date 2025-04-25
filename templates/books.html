@@ -59,6 +59,7 @@
                             <th class="text-center">Total</th>
                             <th class="text-center">Available</th>
                             <th class="text-center">Rented</th>
+                            <th class="text-center">Genre</th>
                             <th class="text-end pe-3">Actions</th>
                         </tr>
                     </thead>
@@ -75,6 +76,7 @@
                                 </span>
                             </td>
                             <td class="text-center">{{book.rented_count}}</td>
+                            <td class="text-center">{{book.genre}}</td>
                             <td class="text-end pe-3">
                                 <div class="btn-group">
                                     <a href="/book/{{book.id}}" class="btn btn-sm btn-outline-secondary" title="View details">
@@ -97,17 +99,7 @@
         </div>
         
         <!-- Export Options -->
-        <div class="card-footer bg-white d-flex justify-content-end py-2">
-            <div class="dropdown">
-                <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="bi bi-download me-1"></i> Export Options
-                </button>
-                <ul class="dropdown-menu" aria-labelledby="exportDropdown">
-                    <li><a class="dropdown-item" href="/export_books">Export All Books</a></li>
-                    <li><a class="dropdown-item" href="/export_books_form">Export with Filters</a></li>
-                </ul>
-            </div>
-        </div>
+        
     </div>
     
     {% else %}
@@ -173,47 +165,86 @@
 </style>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Make rows clickable
-        document.querySelectorAll('.book-row').forEach(row => {
-            row.addEventListener('click', function(e) {
-                // Don't navigate if clicked on action buttons
-                if (!e.target.closest('.btn-group')) {
-                    window.location = '/book/' + this.dataset.bookId;
-                }
-            });
-        });
-        
-        // Setup delete confirmation modal
-        const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
-        document.querySelectorAll('.delete-btn').forEach(btn => {
-            btn.addEventListener('click', function(e) {
-                e.stopPropagation(); // Prevent row click
-                const bookId = this.dataset.bookId;
-                const bookTitle = this.dataset.bookTitle;
-                
-                document.getElementById('bookTitle').textContent = bookTitle;
-                document.getElementById('deleteForm').action = "{{url_for('delete_book', id=0)}}".replace('0', bookId);
-                
-                deleteModal.show();
-            });
-        });
-        
-        // Filter functionality
-        document.getElementById('searchInput').addEventListener('keyup', function() {
-            const searchTerm = this.value.toLowerCase();
-            document.querySelectorAll('.book-row').forEach(row => {
-                const title = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
-                const author = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
-                const id = row.querySelector('td:nth-child(1)').textContent.toLowerCase();
-                
-                if (title.includes(searchTerm) || author.includes(searchTerm) || id.includes(searchTerm)) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
-            });
+   document.addEventListener('DOMContentLoaded', function() {
+    // Make rows clickable
+    document.querySelectorAll('.book-row').forEach(row => {
+        row.addEventListener('click', function(e) {
+            // Don't navigate if clicked on action buttons
+            if (!e.target.closest('.btn-group')) {
+                window.location = '/book/' + this.dataset.bookId;
+            }
         });
     });
+    
+    // Setup delete confirmation modal
+    const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation(); // Prevent row click
+            const bookId = this.dataset.bookId;
+            const bookTitle = this.dataset.bookTitle;
+            
+            document.getElementById('bookTitle').textContent = bookTitle;
+            document.getElementById('deleteForm').action = "{{url_for('delete_book', id=0)}}".replace('0', bookId);
+            
+            deleteModal.show();
+        });
+    });
+    
+    // Search and filter functionality
+    const searchInput = document.getElementById('searchInput');
+    const filterSelect = document.getElementById('filterSelect');
+    const applyFilterBtn = document.querySelector('.btn-outline-primary');
+    
+    // Search functionality
+    searchInput.addEventListener('keyup', function() {
+        applyFilters();
+    });
+    
+    // Filter functionality - Apply button
+    applyFilterBtn.addEventListener('click', function() {
+        applyFilters();
+    });
+    
+    // Combined search and filter function
+    function applyFilters() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const filterValue = filterSelect.value;
+        
+        document.querySelectorAll('.book-row').forEach(row => {
+            const title = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+            const author = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
+            const id = row.querySelector('td:nth-child(1)').textContent.toLowerCase();
+            const available = parseInt(row.querySelector('td:nth-child(5)').textContent.trim());
+            const total = parseInt(row.querySelector('td:nth-child(4)').textContent.trim());
+            
+            // Search filter
+            const matchesSearch = title.includes(searchTerm) || 
+                                 author.includes(searchTerm) || 
+                                 id.includes(searchTerm);
+            
+            // Category filter
+            let matchesFilter = true;
+            
+            if (filterValue === 'Available Books') {
+                // Available books: available count > 0
+                matchesFilter = available > 0;
+            } else if (filterValue === 'Currently Rented') {
+                // Currently rented: total > available (meaning some are rented)
+                matchesFilter = total > available;
+            } else if (filterValue === 'Low Stock') {
+                // Low stock: available < 3
+                matchesFilter = available < 3 && available > 0;
+            }
+            
+            // Show row only if it matches both filters
+            if (matchesSearch && matchesFilter) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+});
 </script>
 {% endblock %}

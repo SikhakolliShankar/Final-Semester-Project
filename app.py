@@ -421,7 +421,7 @@ def books():
 
     # Execute SQL Query
     result = cur.execute(
-        "SELECT id,title,author,total_quantity,available_quantity,rented_count FROM books")
+        "SELECT id,title,author,total_quantity,available_quantity,rented_count,genre FROM books")
     books = cur.fetchall()
     # Render Template
     if result > 0:
@@ -1414,9 +1414,9 @@ def reports():
 
 # Define Search-Form
 class SearchBook(Form):
-    title = StringField('Title', [validators.Length(min=2, max=255)])
-    author = StringField('Author(s)', [validators.Length(min=2, max=255)])
-
+    title = StringField('Title', [validators.Length(min=2, max=255), validators.Optional()])
+    author = StringField('Author(s)', [validators.Length(min=2, max=255), validators.Optional()])
+    genre = StringField('Genre', [validators.Length(min=2, max=255), validators.Optional()])
 
 # Search
 @app.route('/search_book', methods=['GET', 'POST'])
@@ -1427,17 +1427,42 @@ def search_book():
 
     # To handle POST request to route
     if request.method == 'POST' and form.validate():
-        # Create MySQLCursor
-        # cur = mysql.connection.cursor()
+        # Get search terms
+        title = form.title.data.strip()
+        author = form.author.data.strip()
+        genre = form.genre.data.strip()
+        
+        # Check if at least one field has data
+        if not (title or author or genre):
+            msg = 'Please enter at least one field to search'
+            return render_template('search_book.html', form=form, warning=msg)
+        
+        # Create query dynamically based on which fields are filled
         connection = get_db_connection()
         cur = connection.cursor()
-        title = '%'+form.title.data+'%'
-        author = '%'+form.author.data+'%'
-        # Check if book with same ID already exists
-        result = cur.execute(
-            "SELECT * FROM books WHERE title LIKE %s OR author LIKE %s", [title, author])
+        
+        query = "SELECT * FROM books WHERE "
+        params = []
+        conditions = []
+        
+        if title:
+            conditions.append("title LIKE %s")
+            params.append('%' + title + '%')
+        
+        if author:
+            conditions.append("author LIKE %s")
+            params.append('%' + author + '%')
+        
+        if genre:
+            conditions.append("genre LIKE %s")
+            params.append('%' + genre + '%')
+        
+        # Join conditions with AND for more precise search
+        query += " AND ".join(conditions)
+        
+        # Execute query
+        result = cur.execute(query, params)
         books = cur.fetchall()
-        # Close DB Connection
         cur.close()
 
         # Flash Success Message
@@ -1451,8 +1476,6 @@ def search_book():
 
     # To handle GET request to route
     return render_template('search_book.html', form=form)
-
-
 
 
 @app.route("/digital_books")
