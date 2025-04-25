@@ -854,10 +854,23 @@ def update_transactions():
         total_charge = difference * transaction['per_day_fee']
         # Update the total_charge in the database
         cur.execute("UPDATE transactions SET total_charge = %s WHERE id = %s", (total_charge, transaction["id"]))
-    
+
     # Commit and close the cursor
     connection.commit()
     cur.close()
+
+def update_outstanding_debt():
+    connection = get_db_connection()
+    cur = connection.cursor()
+    cur.execute("update members set outstanding_debt=0")
+    cur.execute("select id, member_id, total_charge, amount_paid from transactions")
+    transactions = cur.fetchall()
+    for transaction in transactions:
+        if transaction['total_charge'] > transaction['amount_paid']:
+            cur.execute("update members set outstanding_debt=outstanding_debt+%s where id=%s", (transaction['total_charge']-transaction['amount_paid'], transaction['member_id']))
+    connection.commit()
+    cur.close()
+
 
 '''
 @app.route('/send_alerts')
@@ -1894,4 +1907,5 @@ def search_books():
 if __name__ == '__main__':
     app.secret_key = "secret"
     update_transactions()
+    update_outstanding_debt()
     app.run(debug=True)
