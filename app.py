@@ -1389,11 +1389,11 @@ def reports():
     member_count = request.args.get('member_count', default=5, type=int)
     
     # Ensure valid values (fallback to defaults if invalid)
-    valid_counts = [5, 10, 20, 50]
-    if book_count not in valid_counts:
-        book_count = 5
-    if member_count not in valid_counts:
-        member_count = 5
+    # valid_counts = [5, 10, 20, 50]
+    # if book_count not in valid_counts:
+    #     book_count = 5
+    # if member_count not in valid_counts:
+    #     member_count = 5
     
     # Create database connection
     connection = get_db_connection()

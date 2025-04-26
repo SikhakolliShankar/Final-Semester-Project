@@ -344,21 +344,13 @@
         <form action="/reports" method="GET" class="row g-3">
           <div class="col-md-6">
             <label for="book_count" class="form-label">Number of Top Books:</label>
-            <select name="book_count" id="book_count" class="form-select">
-              <option value="5" {% if book_count == 5 %}selected{% endif %}>5</option>
-              <option value="10" {% if book_count == 10 %}selected{% endif %}>10</option>
-              <option value="20" {% if book_count == 20 %}selected{% endif %}>20</option>
-              <option value="50" {% if book_count == 50 %}selected{% endif %}>50</option>
-            </select>
+            <input type="number" name="book_count" id="book_count" class="form-control" 
+               value="{{ book_count }}" min="1" max="100">
           </div>
           <div class="col-md-6">
             <label for="member_count" class="form-label">Number of Top Members:</label>
-            <select name="member_count" id="member_count" class="form-select">
-              <option value="5" {% if member_count == 5 %}selected{% endif %}>5</option>
-              <option value="10" {% if member_count == 10 %}selected{% endif %}>10</option>
-              <option value="20" {% if member_count == 20 %}selected{% endif %}>20</option>
-              <option value="50" {% if member_count == 50 %}selected{% endif %}>50</option>
-            </select>
+            <input type="number" name="member_count" id="member_count" class="form-control" 
+               value="{{ member_count }}" min="1" max="100">
           </div>
           <div class="col-12">
             <button type="submit" class="btn btn-primary">Apply Filters</button>
