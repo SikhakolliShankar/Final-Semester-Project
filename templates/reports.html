@@ -1,8 +1,6 @@
 {% extends 'layout.html' %}
 {% block body %}
 
-<!DOCTYPE html>
-<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -222,6 +220,47 @@
       cursor: pointer;
     }
     
+    .warning-message {
+      background-color: #fff3cd;
+      color: #856404;
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+      border-left: 5px solid #ffc107;
+    }
+    
+    .filter-section {
+      background-color: #f9fafb;
+      padding: 15px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    
+    .filter-form {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .filter-form select {
+      padding: 8px;
+      border-radius: 4px;
+      border: 1px solid #d1d5db;
+    }
+    
+    .filter-form button {
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    
+    .filter-form button:hover {
+      background-color: var(--secondary);
+    }
+    
     /* Responsive */
     @media (max-width: 768px) {
       .table-responsive {
@@ -239,7 +278,6 @@
     }
   </style>
 </head>
-<body>
   <!-- Navbar -->
   <nav class="navbar navbar-expand-md navbar-dark fixed-top">
     <div class="container">
@@ -291,15 +329,48 @@
       <h1><i class="fas fa-chart-line me-3"></i>Library Reports</h1>
     </div>
     
+    {% if warning %}
+    <div class="warning-message">
+      <i class="fas fa-exclamation-triangle me-2"></i> {{ warning }}
+    </div>
+    {% endif %}
+    
+    <!-- Filter Form -->
+    <div class="card mb-4">
+      <div class="card-header bg-light">
+        <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Report Filters</h5>
+      </div>
+      <div class="card-body">
+        <form action="/reports" method="GET" class="row g-3">
+          <div class="col-md-6">
+            <label for="book_count" class="form-label">Number of Top Books:</label>
+            <select name="book_count" id="book_count" class="form-select">
+              <option value="5" {% if book_count == 5 %}selected{% endif %}>5</option>
+              <option value="10" {% if book_count == 10 %}selected{% endif %}>10</option>
+              <option value="20" {% if book_count == 20 %}selected{% endif %}>20</option>
+              <option value="50" {% if book_count == 50 %}selected{% endif %}>50</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label for="member_count" class="form-label">Number of Top Members:</label>
+            <select name="member_count" id="member_count" class="form-select">
+              <option value="5" {% if member_count == 5 %}selected{% endif %}>5</option>
+              <option value="10" {% if member_count == 10 %}selected{% endif %}>10</option>
+              <option value="20" {% if member_count == 20 %}selected{% endif %}>20</option>
+              <option value="50" {% if member_count == 50 %}selected{% endif %}>50</option>
+            </select>
+          </div>
+          <div class="col-12">
+            <button type="submit" class="btn btn-primary">Apply Filters</button>
+          </div>
+        </form>
+      </div>
+    </div>
+    
     <!-- Popular Books Report -->
     <div class="report-card">
       <div class="report-header">
-        <h3><i class="fas fa-book-reader"></i>Most Popular Books</h3>
-        <div>
-          <button class="btn btn-sm btn-outline-primary" id="exportBooks">
-            <i class="fas fa-file-export me-1"></i>Export
-          </button>
-        </div>
+        <h3><i class="fas fa-book-reader"></i>Most Popular Books (Top {{ book_count }})</h3>
       </div>
       <div class="report-body">
         <div class="table-responsive">
@@ -315,31 +386,22 @@
               </tr>
             </thead>
             <tbody>
-              <!-- Sample data to show styling -->
-              <tr class="clickable">
-                <td><a href="/book/1" class="btn-book-id">00001</a></td>
-                <td>To Kill a Mockingbird</td>
-                <td>Harper Lee</td>
-                <td>5</td>
-                <td class="book-available">3</td>
-                <td class="book-rented">42</td>
-              </tr>
-              <tr class="clickable">
-                <td><a href="/book/2" class="btn-book-id">00002</a></td>
-                <td>1984</td>
-                <td>George Orwell</td>
-                <td>8</td>
-                <td class="book-available">1</td>
-                <td class="book-rented">37</td>
-              </tr>
-              <tr class="clickable">
-                <td><a href="/book/3" class="btn-book-id">00003</a></td>
-                <td>Pride and Prejudice</td>
-                <td>Jane Austen</td>
-                <td>4</td>
-                <td class="book-available">2</td>
-                <td class="book-rented">28</td>
-              </tr>
+              {% if books %}
+                {% for book in books %}
+                <tr class="clickable">
+                  <td><a href="/book/{{ book.id }}" class="btn-book-id">{{ '%05d' % book.id }}</a></td>
+                  <td>{{ book.title }}</td>
+                  <td>{{ book.author }}</td>
+                  <td>{{ book.total_quantity }}</td>
+                  <td class="book-available">{{ book.available_quantity }}</td>
+                  <td class="book-rented">{{ book.rented_count }}</td>
+                </tr>
+                {% endfor %}
+              {% else %}
+                <tr>
+                  <td colspan="6" class="text-center">No popular books data available</td>
+                </tr>
+              {% endif %}
             </tbody>
           </table>
         </div>
@@ -349,12 +411,7 @@
     <!-- Highest Paying Customers Report -->
     <div class="report-card">
       <div class="report-header">
-        <h3><i class="fas fa-crown"></i>Highest Paying Members</h3>
-        <div>
-          <button class="btn btn-sm btn-outline-primary" id="exportMembers">
-            <i class="fas fa-file-export me-1"></i>Export
-          </button>
-        </div>
+        <h3><i class="fas fa-crown"></i>Highest Paying Members (Top {{ member_count }})</h3>
       </div>
       <div class="report-body">
         <div class="table-responsive">
@@ -367,22 +424,19 @@
               </tr>
             </thead>
             <tbody>
-              <!-- Sample data to show styling -->
-              <tr class="clickable">
-                <td><a href="/member/1" class="btn-member-id">001</a></td>
-                <td>John Smith</td>
-                <td class="amount-spent">$245.50</td>
-              </tr>
-              <tr class="clickable">
-                <td><a href="/member/2" class="btn-member-id">002</a></td>
-                <td>Sarah Johnson</td>
-                <td class="amount-spent">$198.75</td>
-              </tr>
-              <tr class="clickable">
-                <td><a href="/member/3" class="btn-member-id">003</a></td>
-                <td>Michael Brown</td>
-                <td class="amount-spent">$187.20</td>
-              </tr>
+              {% if members %}
+                {% for member in members %}
+                <tr class="clickable">
+                  <td><a href="/member/{{ member.id }}" class="btn-member-id">{{ '%03d' % member.id }}</a></td>
+                  <td>{{ member.name }}</td>
+                  <td class="amount-spent">${{ '%.2f' % member.amount_spent }}</td>
+                </tr>
+                {% endfor %}
+              {% else %}
+                <tr>
+                  <td colspan="3" class="text-center">No member data available</td>
+                </tr>
+              {% endif %}
             </tbody>
           </table>
         </div>
@@ -407,16 +461,6 @@
           });
         });
       });
-      
-      // Export buttons (demo functionality)
-      document.getElementById('exportBooks').addEventListener('click', function() {
-        alert('Exporting Popular Books Report...');
-      });
-      
-      document.getElementById('exportMembers').addEventListener('click', function() {
-        alert('Exporting Highest Paying Members Report...');
-      });
     });
   </script>
-</body>
-</html>{% endblock %}
+{% endblock %}

@@ -1381,36 +1381,55 @@ def delete_transaction(transaction_id):
 
 
 
-# Reports
 @app.route('/reports')
 @admin_required
 def reports():
-    # Create MySQLCursor
-    # cur = mysql.connection.cursor()
+    # Get filter parameters with default values
+    book_count = request.args.get('book_count', default=5, type=int)
+    member_count = request.args.get('member_count', default=5, type=int)
+    
+    # Ensure valid values (fallback to defaults if invalid)
+    valid_counts = [5, 10, 20, 50]
+    if book_count not in valid_counts:
+        book_count = 5
+    if member_count not in valid_counts:
+        member_count = 5
+    
+    # Create database connection
     connection = get_db_connection()
     cur = connection.cursor()
-
-    # Execute SQL Query to get 5 highest paying customers
+    
+    # Execute SQL Query to get N highest paying members
     result_members = cur.execute(
-        "SELECT id,name,amount_spent FROM members ORDER BY amount_spent DESC LIMIT 5")
+        "SELECT id, name, amount_spent FROM members ORDER BY amount_spent DESC LIMIT %s",
+        (member_count,))
     members = cur.fetchall()
-
-    # Execute SQL Query to get 5 most popular books
+    
+    # Execute SQL Query to get N most popular books
     result_books = cur.execute(
-        "SELECT id,title,author,total_quantity,available_quantity,rented_count FROM books ORDER BY rented_count DESC LIMIT 5")
+        "SELECT id, title, author, total_quantity, available_quantity, rented_count FROM books ORDER BY rented_count DESC LIMIT %s",
+        (book_count,))
     books = cur.fetchall()
-
-    # Render Template
+    
+    # Build warning message if no results
     msg = ''
     if result_members <= 0:
         msg = 'No Members Found. '
     if result_books <= 0:
-        msg = msg+'No Books Found'
-    return render_template('reports.html', members=members, books=books, warning=msg)
-
-    # Close DB Connection
+        msg = msg + 'No Books Found'
+    
+    # Close the cursor
     cur.close()
-
+    
+    # Render the template with all necessary data
+    return render_template(
+        'reports.html', 
+        members=members, 
+        books=books, 
+        warning=msg,
+        book_count=book_count,
+        member_count=member_count
+    )
 
 # Define Search-Form
 class SearchBook(Form):
@@ -1848,6 +1867,7 @@ def member_required(f):
             return redirect(url_for('member_login'))
         return f(*args, **kwargs)
     return decorated_function
+
 @app.route('/member/dashboard')
 @member_required
 def member_dashboard():
@@ -1895,6 +1915,7 @@ def edit_member_details():
     connection.close()
 
     return render_template('edit_member.html', member=member_info)
+
 @app.route('/member_logout')
 @member_required
 def member_logout():
@@ -1919,8 +1940,8 @@ def search_books():
         cur = connection.cursor()
         cur.execute("""
             SELECT * FROM books 
-            WHERE genre LIKE %s
-        """, ('%' + query + '%'))
+            WHERE genre LIKE %s OR title LIKE %s OR author LIKE %s
+        """, [('%' + query + '%'),('%' + query + '%'),('%' + query + '%')])
         results = cur.fetchall()
         cur.close()
 
