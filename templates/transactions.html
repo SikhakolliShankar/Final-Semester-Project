@@ -69,7 +69,7 @@
                             data-book-id="{{transaction.book_id}}"
                             data-member-id="{{transaction.member_id}}"
                             data-borrowed-on="{{transaction.borrowed_on}}"
-                            data-status="{% if transaction.amount_paid=='-' %}open{% else %}closed{% endif %}">
+                            data-status="{% if transaction.amount_paid!=transaction.total_charge %}open{% else %}closed{% endif %}">
                             <td class="ps-3"><span class="badge bg-secondary">{{transaction.id}}</span></td>
                             <td>
                                 <a href="book/{{transaction.book_id}}" class="text-decoration-none">
@@ -185,42 +185,43 @@
     document.addEventListener("DOMContentLoaded", function() {
     // Function to calculate days between two dates
     function daysBetween(date1, date2) {
-        const oneDay = 24 * 60 * 60 * 1000; // hours*minutes*seconds*milliseconds
-        const diffTime = Math.abs(date2 - date1);
-        return Math.floor(diffTime / oneDay);
-    }
-    
-    // Function to check for overdue transactions
-    function markOverdueTransactions() {
-        const rows = document.querySelectorAll('.transaction-row');
-        const today = new Date();
+            console.log("hello");
+            const oneDay = 24 * 60 * 60 * 1000; // hours*minutes*seconds*milliseconds
+            const diffTime = Math.abs(date2 - date1);
+            return Math.floor(diffTime / oneDay);
+        }
         
-        rows.forEach(row => {
-            // Only check open transactions
-            if (row.dataset.status === 'open') {
-                const borrowedDateStr = row.dataset.borrowedOn;
-                const borrowedDate = new Date(borrowedDateStr);
-                const daysDiff = daysBetween(borrowedDate, today);
-                
-                // Mark as overdue if more than 10 days
-                if (daysDiff > 10) {
-                    row.classList.add('overdue');
-                    const badge = row.querySelector('.overdue-badge');
-                    if (badge) {
+        // Function to check for overdue transactions
+        function markOverdueTransactions() {
+            const rows = document.querySelectorAll('.transaction-row');
+            const today = new Date();
+
+            rows.forEach(row => {
+                // Only check open transactions
+                console.log(row);
+                if (row.dataset.status === 'open') {
+                    console.log("markOverdueTransactions called");
+
+                    const borrowedDateStr = row.dataset.borrowedOn;
+                    const borrowedDate = new Date(borrowedDateStr);
+                    const daysDiff = daysBetween(borrowedDate, today);
+                    console.log(daysDiff);
+                    // Mark as overdue if more than 10 days
+                    if (daysDiff > 7) {
+                        console.log(daysDiff);
+                        row.classList.add('overdue');
+                        const badge = row.querySelector('.overdue-badge');
                         badge.classList.remove('d-none');
-                    }
-                    
-                    // Enable email button
-                    const emailButton = row.querySelector('.email-alert-btn');
-                    if (emailButton) {
+                        
+                        // Enable email button
+                        const emailButton = row.querySelector('.email-alert-btn');
                         emailButton.style.pointerEvents = 'auto';
                         emailButton.style.opacity = '1';
                         emailButton.title = 'Send overdue reminder';
                     }
                 }
-            }
-        });
-    }
+            });
+        }
     
     // Search and filter functionality
     const searchInput = document.getElementById('searchInput');
@@ -307,6 +308,7 @@
         applyFilters();
     });
     
+    console.log("Transaction page loaded successfully.");
     // Initialize overdue marking and email buttons
     markOverdueTransactions();
 });

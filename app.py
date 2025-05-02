@@ -4,6 +4,7 @@ import pymysql
 import secrets
 # from flask_mysqldb import MySQL
 from wtforms import Form, validators, StringField, FloatField, IntegerField, DateField, SelectField
+from wtforms.validators import DataRequired
 from datetime import datetime
 import MySQLdb
 import urllib
@@ -460,12 +461,12 @@ def viewBook(id):
 # Define Add-Book-Form
 class AddBook(Form):
     id = StringField('Book ID', [validators.Length(min=1, max=11)])
-    title = StringField('Title', [validators.Length(min=2, max=255)])
-    author = StringField('Author(s)', [validators.Length(min=2, max=255)])
+    title = StringField('Title', [validators.Length(min=2, max=255), DataRequired()])
+    author = StringField('Author(s)', [validators.Length(min=2, max=255), DataRequired()])
     average_rating = FloatField(
         'Average Rating', [validators.Optional(), validators.NumberRange(min=0, max=5)])
-    isbn = StringField('ISBN', [validators.Length(min=10, max=10)])
-    isbn13 = StringField('ISBN13', [validators.Length(min=13, max=13)])
+    isbn = StringField('ISBN', [validators.Length(min=10, max=10), DataRequired()])
+    isbn13 = StringField('ISBN13', [validators.Length(min=13, max=13), DataRequired()])
     language_code = StringField('Language', [validators.Optional(), validators.Length(min=1, max=30)])
     num_pages = IntegerField('No. of Pages', [validators.Optional(), validators.NumberRange(min=1)])
     ratings_count = IntegerField(
@@ -473,10 +474,10 @@ class AddBook(Form):
     text_reviews_count = IntegerField(
         'No. of Text Reviews', [validators.Optional(), validators.NumberRange(min=0)])
     publication_date = DateField(
-        'Publication Date', [validators.InputRequired()])
-    publisher = StringField('Publisher', [validators.Length(min=2, max=255)])
+        'Publication Date', [validators.InputRequired(), DataRequired()])
+    publisher = StringField('Publisher', [validators.Length(min=2, max=255), DataRequired()])
     total_quantity = IntegerField(
-        'Total No. of Books', [validators.NumberRange(min=1)])
+        'Total No. of Books', [validators.NumberRange(min=1), DataRequired()])
     genre = StringField('Genre', [validators.Optional(), validators.Length(min=2, max=255)])
 
 
@@ -978,7 +979,7 @@ def send_email(transaction_id):
             current_charge = days_overdue * user_data['per_day_fee']
             
             # Don't send email if not overdue
-            if days_borrowed <= 10:
+            if days_borrowed <= 7:
                 return jsonify({
                     "message": "Email alert not needed as borrowed duration is within limit.",
                     "days_borrowed": days_borrowed
@@ -1321,7 +1322,7 @@ def return_book(transaction_id):
             # First time return: finalize transaction
             transaction_debt = max(0, total_charge - amount_paid)
 
-            if current_debt - previous_payment + transaction_debt > 500:
+            if current_debt - previous_payment + transaction_debt > 5000:
                 error = 'Outstanding Debt Cannot Exceed Rs.500'
                 return render_template('return_book.html', form=form, error=error,
                                        payment_to_be_done=total_charge, difference=borrowed_days,
